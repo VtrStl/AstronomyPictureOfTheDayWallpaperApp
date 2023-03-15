@@ -17,7 +17,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
         {
             NotificationIcon.BalloonTipTitle = "APOD Wallpaper Manager";
             NotificationIcon.Visible = true;
-            if (wallpaperAPODruntime.ConfigExists() == true)
+            if (WallpaperAPODruntime.ConfigExists() == true)
             {
                 Visible = false;
                 ShowInTaskbar = false;
@@ -48,7 +48,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             {
                 await Task.Run((wallpaperAPODloader.LoadPicture));
                 await Task.Run((wallpaperAPODloader.SetWallpaper));
-                MessageBox.Show(wallpaperAPODruntime.ConfigExists().ToString());
+                MessageBox.Show(WallpaperAPODruntime.ConfigExists().ToString());
             }
             catch (Exception ex) { MessageBox.Show("Error: " + ex.Message); }
         }

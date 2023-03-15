@@ -10,9 +10,9 @@ namespace AstronomyPictureOfTheDayWallpaperApp
     public class WallpaperAPODruntime
     {
         WallpaperAPODloader wpAPODloader = new();
-        public bool ConfigExists()
+        public static bool ConfigExists()
         {
-            if (File.Exists(wpAPODloader.configPath))
+            if (File.Exists(WallpaperAPODloader.configPath))
             {
                 return true;
             }
