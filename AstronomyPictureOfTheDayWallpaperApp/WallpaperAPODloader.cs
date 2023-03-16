@@ -16,7 +16,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
     {
         [DllImport("user32.dll", CharSet = CharSet.Unicode)]
         private static extern Int32 SystemParametersInfo(UInt32 action, UInt32 uParam, String vParam, UInt32 winIni);
-
+        // String variables
         private readonly string url = "https://api.nasa.gov/planetary/apod?api_key=3mCppAwIDyPLdiEMfBFovfWjpwmrp3KIgGTFRCKO";
         public static string configPath = Path.Combine(Application.LocalUserAppDataPath, "activated");
         private string json = string.Empty;
@@ -26,14 +26,14 @@ namespace AstronomyPictureOfTheDayWallpaperApp
         private string pictureFolder = string.Empty;
         private string picturePathDefault = string.Empty;
         private string picturePathModified = string.Empty;
-
+        // Dynamic variable
         private dynamic? results;
-           
+        // Image related variables   
         private Image? pictureModified;
         private Brush? textColor;
         private readonly Brush? shadowBrush;
-        // Important values for adapt text to image, need more optimization
-        const float minTitleHeightRatio = 0.15f; 
+        // float variables with const values for adapt text to image, need more optimization
+        const float minTitleHeightRatio = 0.13f; 
         const float maxTitleHeightRatio = 0.24f;
         const float minTitlePaddingRatio = 0.05f;
         const float maxTitlePaddingRatio = 0.08f;
@@ -53,63 +53,70 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             description = results.explanation;           
             pictureFolder = Path.Combine(Application.LocalUserAppDataPath, "img");
             picturePathDefault = Path.Combine(pictureFolder, "APODclear.jpg");            
-            if (!Directory.Exists(pictureFolder)) { Directory.CreateDirectory(pictureFolder); } //Check if the folder already exists, otherwise will create a folder in the user's Local                       
+            if (!Directory.Exists(pictureFolder)) { Directory.CreateDirectory(pictureFolder); } // Check if the folder already exists, otherwise will create a folder in the user's Local                       
             using (WebClient client = new())
             {
                 client.DownloadFile(pictureURL, picturePathDefault);
             }
-            var createConfig = File.Create(configPath); //For now, it creates blank file "activated" and on startup if it exists, it will start program silently on background
+            var createConfig = File.Create(configPath); // For now, it creates blank file "activated" and on startup if it exists, it will start program silently on background
             createConfig?.Dispose();         
         }        
         // Download and set the current picture as wallpaper
         public async void SetWallpaper()
         {
-            picturePathModified = Path.Combine(pictureFolder, "APODmodified.png");
+            picturePathModified = Path.Combine(pictureFolder, "APODmodified.png"); 
             pictureModified = Image.FromFile(picturePathDefault);            
             using (Graphics graphic = Graphics.FromImage(pictureModified))
             {
-                await SetTitle(graphic, pictureModified);
-                await SetDescription(graphic, pictureModified);   
-                pictureModified.Save(picturePathModified, ImageFormat.Png); //Create new modified picture with a title, its PNG because of the lossless format
+                RectangleF descriptionRect = await SetDescription(graphic, pictureModified); // Needed variable for parameter to Title to adapt title to description
+                await SetTitle(graphic, pictureModified, descriptionRect);
+                pictureModified.Save(picturePathModified, ImageFormat.Png); // Create new modified picture with a title, its PNG because of the lossless format
             }                       
             pictureModified?.Dispose();                     
             _ = SystemParametersInfo(0x14, 0, picturePathModified, 0x01 | 0x02);
         }
-
-        private async Task SetTitle(Graphics graphic, Image pictureModified)
+        // Set title in image and size is by width and heigh of the image and add shadow
+        private async Task SetTitle(Graphics graphic, Image pictureModified, RectangleF descriptionRect)
         {
-            int titlePadding = 15;
-            float titleHeightRatio = Math.Max(Math.Min(pictureModified.Height * 0.001f, maxTitleHeightRatio), minTitleHeightRatio);
+            int titlePadding = (int)(0.03 * pictureModified.Width);
+            float titleHeightRatio = Math.Max(Math.Min(pictureModified.Height * 0.005f, maxTitleHeightRatio), minTitleHeightRatio);
             int titleHeight = (int)((pictureModified.Height) * titleHeightRatio);
-            float titleFontSize = pictureModified.Width * 0.02f;
-            while (true) // adjust font size for smaller resolutions
+            int offset = (int)(pictureModified.Height * -0.035); // Set height above description
+            RectangleF titleRect = new(
+                    titlePadding,
+                    pictureModified.Height - titleHeight - 1.5f * titlePadding - offset,
+                    pictureModified.Width - 2 * titlePadding,
+                    titleHeight
+            );
+            float maxFontSize = titleRect.Height;
+            float titleFontSize = maxFontSize;
+            Font titleFont = new("Gill Sans Nova", titleFontSize, FontStyle.Bold);
+            SizeF textSize = graphic.MeasureString(title, titleFont, (int)descriptionRect.Width);
+            while (textSize.Height > titleRect.Height && titleFontSize > 1) 
             {
-                Font titleFont = new("Gill Sans Nova", titleFontSize, FontStyle.Bold);
-                SizeF titleTextSize = graphic.MeasureString(title, titleFont);
-                if (titleTextSize.Width <= pictureModified.Width - titlePadding && titleTextSize.Height <= titleHeight) break;  // title fits, break out of loop
-                if (titleFontSize <= 1) break; // font size too small, break out of loop
-                titleFontSize -= 1; // decrease font size and try again
+                titleFontSize--;
+                titleFont = new Font("Gill Sans Nova", titleFontSize, FontStyle.Bold);
+                textSize = graphic.MeasureString(description, titleFont, (int)titleRect.Width);
             }
-            Font finalTitleFont = new("Gill Sans Nova", titleFontSize, FontStyle.Bold);
-            SizeF finalTitleTextSize = graphic.MeasureString(title, finalTitleFont);
-            float titleX = pictureModified.Width - finalTitleTextSize.Width - titlePadding;
-            float titleY = pictureModified.Height - finalTitleTextSize.Height - titleHeight;            
             SolidBrush shadowBrush = new(Color.FromArgb(128, Color.Black));
-            graphic.DrawString(title, finalTitleFont, shadowBrush, titleX + 3, titleY + 3); // draw title shadow            
             SolidBrush textColor = new(Color.White);
-            graphic.DrawString(title, finalTitleFont, textColor, titleX, titleY); // draw title
+            StringFormat titleFormat = new() { Alignment = StringAlignment.Far };
+            float shadowOffset = pictureModified.Height * 0.002f;
+            RectangleF shadowRect = new RectangleF(titleRect.X + shadowOffset, titleRect.Y + shadowOffset, titleRect.Width, titleRect.Height);
+            graphic.DrawString(title, titleFont, shadowBrush, shadowRect, titleFormat); // draw title shadow
+            graphic.DrawString(title, titleFont, textColor, titleRect, titleFormat); // draw title
             await Task.CompletedTask;
         }
-        
-        private async Task SetDescription(Graphics graphic, Image pictureModified)
+        // Set description in image and size is by width and heigh of the image
+        private async Task<RectangleF> SetDescription(Graphics graphic, Image pictureModified)
         {
             int descriptionPadding = (int)(0.03 * pictureModified.Width);
             float descriptionHeightRatio = Math.Max(Math.Min(pictureModified.Height * 0.0005f, maxDescriptionHeightRatio), minDescriptionHeightRatio);
             int descriptionHeight = (int)((pictureModified.Height - 30) * descriptionHeightRatio);
-            int offset = (int)(pictureModified.Height * 0.0005); // adjust the offset as needed
+            int offset = (int)(pictureModified.Height * 0.0005);
             RectangleF descriptionRect = new(
                     descriptionPadding,
-                    pictureModified.Height - descriptionHeight - 2 * descriptionPadding - 20 - offset,
+                    pictureModified.Height - descriptionHeight - 2 * descriptionPadding - 10 - offset,
                     pictureModified.Width - 2 * descriptionPadding,
                     descriptionHeight
             );
@@ -122,14 +129,12 @@ namespace AstronomyPictureOfTheDayWallpaperApp
                 descriptionFontSize--;
                 descriptionFont = new Font("Gill Sans Nova", descriptionFontSize, FontStyle.Regular);
                 textSize = graphic.MeasureString(description, descriptionFont, (int)descriptionRect.Width);
-            }            
+            }
             textColor = new SolidBrush(Color.White);
-            StringFormat formatDescription = new()
-            {
-                Alignment = StringAlignment.Far
-            };
-            graphic.DrawString(description, descriptionFont, textColor, descriptionRect, formatDescription); // Draw the text using the calculated font size
+            StringFormat descriptionFormat = new() { Alignment = StringAlignment.Far };
+            graphic.DrawString(description, descriptionFont, textColor, descriptionRect, descriptionFormat); // Draw the text using the calculated font size
             await Task.CompletedTask;
+            return descriptionRect;
         }
         // Clear caches in the local app folder
         public static void ClearCache()
