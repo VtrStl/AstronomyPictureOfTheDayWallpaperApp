@@ -5,23 +5,27 @@ namespace AstronomyPictureOfTheDayWallpaperApp
 {
     public partial class Form1 : Form
     {
-        protected readonly WallpaperAPODloader wallpaperAPODloader = new();
-        protected readonly WallpaperAPODruntime wallpaperAPODruntime = new();
-
+        private readonly WallpaperAPODloader wpAPODloader = new();
+        protected readonly WallpaperAPODruntime wallpaperAPODruntime;
+        private bool configExists = WallpaperAPODruntime.ConfigExists();
         public Form1()
         {
             InitializeComponent();
+            wallpaperAPODruntime = new WallpaperAPODruntime(wpAPODloader);
         }
 
         private void Form1_Load(object sender, EventArgs e)
         {
             NotificationIcon.BalloonTipTitle = "APOD Wallpaper Manager";
             NotificationIcon.Visible = true;
-            if (WallpaperAPODruntime.ConfigExists() == true)
+            if (configExists)
             {
                 Visible = false;
                 ShowInTaskbar = false;
+                UpdateStatusLabel(true);
+                wallpaperAPODruntime.StartTimer();
             }
+            UpdateTrayIcon(configExists);
         }
 
         private void NotificationIcon_MouseDoubleClick(object sender, MouseEventArgs e)
@@ -30,15 +34,17 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             if (WindowState == FormWindowState.Normal)
             {
                 ShowInTaskbar = true;
+                TopLevel = true;
             }
         }
 
-        private void Form1_SizeChanged(object sender, EventArgs e)
+        public void Form1_SizeChanged(object sender, EventArgs e)
         {
             bool MousePointerNotOnTaskBar = Screen.GetWorkingArea(this).Contains(Cursor.Position);
             if (WindowState == FormWindowState.Minimized && MousePointerNotOnTaskBar)
             {
                 ShowInTaskbar = false;
+                TopLevel = false;
             }
         }
 
@@ -46,9 +52,11 @@ namespace AstronomyPictureOfTheDayWallpaperApp
         {
             try
             {
-                await Task.Run((wallpaperAPODloader.LoadPicture));
-                await Task.Run((wallpaperAPODloader.SetWallpaper));
+                await Task.Run(wpAPODloader.LoadPicture);
+                await Task.Run(wpAPODloader.SetWallpaper);
                 MessageBox.Show(WallpaperAPODruntime.ConfigExists().ToString());
+                UpdateStatusLabel(true);
+                UpdateTrayIcon(true);
             }
             catch (Exception ex) { MessageBox.Show("Error: " + ex.Message); }
         }
@@ -59,7 +67,27 @@ namespace AstronomyPictureOfTheDayWallpaperApp
                 MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
             {
                 WallpaperAPODloader.ClearCache();
+                UpdateStatusLabel(false);
+                UpdateTrayIcon(false);
             }
+        }
+
+        private void UpdateStatusLabel(bool isActive)
+        {
+            StatusLabel.Text = isActive ? "The application is active" : "The application is not active";
+            StatusLabel.ForeColor = isActive ? Color.Green : Color.Red;
+        }
+
+        private void UpdateTrayIcon(bool configExists)
+        {
+            string iconFolder = Path.Combine(Application.StartupPath, "..", "..", "..", "Icons");
+            string iconName = configExists ? "APODiconGreen.ico" : "APODicon.ico";
+            NotificationIcon.Icon = new Icon(Path.Combine(iconFolder, iconName));
+        }
+
+        private async void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            wallpaperAPODruntime.StopTimer();
         }
     }
 }
