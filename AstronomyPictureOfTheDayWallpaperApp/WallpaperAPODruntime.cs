@@ -5,14 +5,16 @@ using System.Text;
 using System.ServiceProcess;
 using System.Timers;
 using System.Threading.Tasks;
+using System.Windows;
 
 namespace AstronomyPictureOfTheDayWallpaperApp
 {
     public class WallpaperAPODruntime
     {
         private WallpaperAPODloader wpAPODloader;
-        private System.Timers.Timer _timer;
-        
+        private System.Timers.Timer? _timer;
+        private TimeSpan TimeToUtc { get; set; }
+
         public WallpaperAPODruntime(WallpaperAPODloader wallpaperAPODloader)
         {
             wpAPODloader = wallpaperAPODloader;
@@ -28,47 +30,41 @@ namespace AstronomyPictureOfTheDayWallpaperApp
         }
 
         public async Task StartTimer()
-        {
-            // Get the next 6:00 am in Washington time
-            DateTime nextWashingtonSixAm = GetNextWashingtonSixAm();
-            TimeSpan timeToWashingtonSixAm = nextWashingtonSixAm.Subtract(DateTime.UtcNow);
+        {            
+            DateTime nextUtcFourPm = GetNextUtcFourPm(); // Get the next 16:10 am in UTC time 
+            TimeToUtc = nextUtcFourPm.Subtract(DateTime.UtcNow);
             _timer = new System.Timers.Timer();
-            // If the next 6:00 am in Washington time has already passed, update the wallpaper now
-            if (timeToWashingtonSixAm < TimeSpan.Zero)
+            _timer.AutoReset = false;
+            if (TimeToUtc < TimeSpan.Zero) // If the next 16:10 am in UTC time has already passed, update the wallpaper now
             {
-                await UpdateWallpaperAndRestartTimer();
-                return;
+                await Task.Run(UpdateWallpaperAndRestartTimer);
+                TimeToUtc = GetNextUtcFourPm().Subtract(DateTime.UtcNow);
             }
             // Set up the timer to update the wallpaper when the time elapses            
-            _timer.Interval = Math.Max(timeToWashingtonSixAm.TotalMilliseconds, 1);
+            _timer.Interval = Math.Max(TimeToUtc.TotalMilliseconds, 1);
             _timer.Elapsed += async (sender, e) => await UpdateWallpaperAndRestartTimer();
             _timer.Start();
-
-            // Wait for the timer to elapse
-            await Task.Delay(timeToWashingtonSixAm);
+            await Task.Delay(TimeToUtc);  // Wait for the timer to elapse
         }
 
         private async Task UpdateWallpaperAndRestartTimer()
-        {
-            // Update the wallpaper
-            await Task.Run(() => wpAPODloader.LoadPicture());
-            await Task.Run(() => wpAPODloader.SetWallpaper());
-            // Restart the timer
-            DateTime nextWashingtonSixAm = GetNextWashingtonSixAm();
-            TimeSpan timeToWashingtonSixAm = nextWashingtonSixAm.Subtract(DateTime.UtcNow);
-            _timer.Interval = Math.Max(timeToWashingtonSixAm.TotalMilliseconds, 1);
+        {            
+            await wpAPODloader.LoadPicture(); // Update the wallpaper
+            DateTime nextUTCtime = GetNextUtcFourPm(); // Restart the timer
+            TimeToUtc = nextUTCtime.Subtract(DateTime.UtcNow);
+            _timer.Interval = Math.Max(TimeToUtc.TotalMilliseconds, 1);
         }
-
-        public DateTime GetNextWashingtonSixAm()
+        // Get and set the UTC time and set another day
+        private static DateTime GetNextUtcFourPm()
         {
-            TimeZoneInfo washingtonTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
-            DateTime washingtonTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, washingtonTimeZone);
-            DateTime nextWashingtonSixAm = new DateTime(washingtonTime.Year, washingtonTime.Month, washingtonTime.Day, 21, 23, 50, 0);
-            if (washingtonTime >= nextWashingtonSixAm)
+            DateTime utcTime = DateTime.UtcNow;
+            DateTime nextUtcFourPm = new(utcTime.Year, utcTime.Month, utcTime.Day, 16, 10, 0, 0, DateTimeKind.Utc);
+            // If the current time is greater than or equal to the next 4:00 PM UTC time, add 1 day
+            if (utcTime >= nextUtcFourPm)
             {
-                nextWashingtonSixAm = nextWashingtonSixAm.AddDays(1);
+                nextUtcFourPm = nextUtcFourPm.AddMinutes(1);
             }
-            return nextWashingtonSixAm;
+            return nextUtcFourPm;
         }
 
         public void StopTimer()

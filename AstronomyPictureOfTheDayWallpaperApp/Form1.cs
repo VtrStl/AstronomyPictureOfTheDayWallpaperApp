@@ -5,16 +5,17 @@ namespace AstronomyPictureOfTheDayWallpaperApp
 {
     public partial class Form1 : Form
     {
-        private readonly WallpaperAPODloader wpAPODloader = new();
-        protected readonly WallpaperAPODruntime wallpaperAPODruntime;
+        private WallpaperAPODloader wpAPODloader = new();
+        protected WallpaperAPODruntime wallpaperAPODruntime;
         private bool configExists = WallpaperAPODruntime.ConfigExists();
         public Form1()
         {
             InitializeComponent();
             wallpaperAPODruntime = new WallpaperAPODruntime(wpAPODloader);
+            UpdateTrayIcon(configExists);
         }
 
-        private void Form1_Load(object sender, EventArgs e)
+        private async void Form1_Load(object sender, EventArgs e)
         {
             NotificationIcon.BalloonTipTitle = "APOD Wallpaper Manager";
             NotificationIcon.Visible = true;
@@ -23,9 +24,8 @@ namespace AstronomyPictureOfTheDayWallpaperApp
                 Visible = false;
                 ShowInTaskbar = false;
                 UpdateStatusLabel(true);
-                wallpaperAPODruntime.StartTimer();
+                await wallpaperAPODruntime.StartTimer();
             }
-            UpdateTrayIcon(configExists);
         }
 
         private void NotificationIcon_MouseDoubleClick(object sender, MouseEventArgs e)
@@ -53,7 +53,6 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             try
             {
                 await Task.Run(wpAPODloader.LoadPicture);
-                await Task.Run(wpAPODloader.SetWallpaper);
                 MessageBox.Show(WallpaperAPODruntime.ConfigExists().ToString());
                 UpdateStatusLabel(true);
                 UpdateTrayIcon(true);
@@ -87,7 +86,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
 
         private async void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
-            wallpaperAPODruntime.StopTimer();
+            await Task.Run(wallpaperAPODruntime.StopTimer);
         }
     }
 }

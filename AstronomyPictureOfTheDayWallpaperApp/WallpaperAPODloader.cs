@@ -19,11 +19,13 @@ namespace AstronomyPictureOfTheDayWallpaperApp
         [DllImport("user32.dll", CharSet = CharSet.Unicode)]
         private static extern Int32 SystemParametersInfo(UInt32 action, UInt32 uParam, String vParam, UInt32 winIni);
         // String variables
-        private readonly string url = "https://api.nasa.gov/planetary/apod?api_key=3mCppAwIDyPLdiEMfBFovfWjpwmrp3KIgGTFRCKO";
+        private readonly string url = "https://api.nasa.gov/planetary/apod?api_key=";
         private readonly string api = "3mCppAwIDyPLdiEMfBFovfWjpwmrp3KIgGTFRCKO";
+        private readonly string thumbnail = "&thumbs=True";
         public static string configPath = Path.Combine(Application.LocalUserAppDataPath, "activated");
         private string json = string.Empty;
         private string pictureURL = string.Empty;
+        private string mediaType = string.Empty;
         private string title = string.Empty;
         private string description = string.Empty;
         private string pictureFolder = string.Empty;
@@ -31,8 +33,6 @@ namespace AstronomyPictureOfTheDayWallpaperApp
         private string picturePathModified = string.Empty;
         // Dynamic variable
         private dynamic? results;
-        private SemaphoreSlim _fileSemaphore = new SemaphoreSlim(1);
-        private bool _disposed = false;
         // Image related variables   
         private Image? pictureModified;
         private Brush? textColor;
@@ -50,30 +50,27 @@ namespace AstronomyPictureOfTheDayWallpaperApp
         {
             using (WebClient client = new())
             {
-                json = client.DownloadString(url);
+                json = await client.DownloadStringTaskAsync(url + api + thumbnail);
             }
             results = JsonConvert.DeserializeObject<dynamic>(json);
-            pictureURL = results.hdurl;
+            mediaType = results.media_type;
             title = results.title;
             description = results.explanation;
             pictureFolder = Path.Combine(Application.LocalUserAppDataPath, "img");
             picturePathDefault = Path.Combine(pictureFolder, "APODclear.jpg");
             if (!Directory.Exists(pictureFolder)) { Directory.CreateDirectory(pictureFolder); } // Check if the folder already exists, otherwise will create a folder in the user's Local                       
-            using (var httpClient = new HttpClient())
+            using (WebClient client = new())
             {
-                using (var response = await httpClient.GetAsync(pictureURL))
+                if (mediaType == "image")
                 {
-                    using (var stream = await response.Content.ReadAsStreamAsync())
-                    {
-                        using (var fileStream = new FileStream(picturePathDefault, FileMode.Create, FileAccess.Write, FileShare.None))
-                        {
-                            await stream.CopyToAsync(fileStream);
-                        }
-                    }
+                    pictureURL = results.hdurl;
+                    client.DownloadFile(pictureURL, picturePathDefault);                    
                 }
+                else { return; }
             }
             var createConfig = File.Create(configPath); // For now, it creates blank file "activated" and on startup if it exists, it will start program silently on background
             createConfig?.Dispose();
+            await Task.Run(SetWallpaper);
             await Task.CompletedTask;
         }
         // Download and set the current picture as wallpaper
@@ -84,14 +81,16 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             {
                 pictureModified = Image.FromStream(fileStream);
             }
-            using (Graphics graphic = Graphics.FromImage(pictureModified))
+            var modifiedBitmap = new Bitmap(pictureModified);
+            using (Graphics graphic = Graphics.FromImage(modifiedBitmap))
             {
-                RectangleF descriptionRect = await SetDescription(graphic, pictureModified); // Needed variable for parameter to Title to adapt title to description
-                await SetTitle(graphic, pictureModified, descriptionRect);
-                pictureModified.Save(picturePathModified, ImageFormat.Png); // Create new modified picture with a title, its PNG because of the lossless format
-            }                       
-            pictureModified?.Dispose();                     
+                RectangleF descriptionRect = await SetDescription(graphic, modifiedBitmap);
+                await SetTitle(graphic, modifiedBitmap, descriptionRect);
+                modifiedBitmap.Save(picturePathModified, ImageFormat.Png);
+            }            
+            modifiedBitmap.Dispose(); // Dispose the modifiedBitmap object           
             _ = SystemParametersInfo(0x14, 0, picturePathModified, 0x01 | 0x02);
+            await Task.CompletedTask;
         }
         // Set title in image and size is by width and heigh of the image and add shadow
         private async Task SetTitle(Graphics graphic, Image pictureModified, RectangleF descriptionRect)
