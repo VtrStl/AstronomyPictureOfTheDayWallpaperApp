@@ -21,11 +21,9 @@ namespace AstronomyPictureOfTheDayWallpaperApp
         // String variables
         private readonly string url = "https://api.nasa.gov/planetary/apod?api_key=";
         private readonly string api = "3mCppAwIDyPLdiEMfBFovfWjpwmrp3KIgGTFRCKO";
-        private readonly string thumbnail = "&thumbs=True";
-        public static string configPath = Path.Combine(Application.LocalUserAppDataPath, "activated");
+        public static string configPath = Path.Combine(Application.LocalUserAppDataPath, "config.txt");
         private string json = string.Empty;
         private string pictureURL = string.Empty;
-        private string mediaType = string.Empty;
         private string title = string.Empty;
         private string description = string.Empty;
         private string pictureFolder = string.Empty;
@@ -35,123 +33,55 @@ namespace AstronomyPictureOfTheDayWallpaperApp
         private dynamic? results;
         // Image related variables   
         private Image? pictureModified;
-        private Brush? textColor;
-        private readonly Brush? shadowBrush;
-        // float variables with const values for adapt text to image, need more optimization
-        const float minTitleHeightRatio = 0.13f; 
-        const float maxTitleHeightRatio = 0.24f;
-        const float minTitlePaddingRatio = 0.05f;
-        const float maxTitlePaddingRatio = 0.08f;
-        const float minDescriptionHeightRatio = 0.05f;
-        const float maxDescriptionHeightRatio = 0.13f;
-
+                   
         // Load the current picture and title from the site https://apod.nasa.gov/apod/ and all the important things that will be used in another methods
         public async Task LoadPicture()
         {
             using (WebClient client = new())
             {
-                json = await client.DownloadStringTaskAsync(url + api + thumbnail);
-            }
+                json = await client.DownloadStringTaskAsync(url + api);
+            }            
             results = JsonConvert.DeserializeObject<dynamic>(json);
-            mediaType = results.media_type;
             title = results.title;
+            string mediaType = results.media_type;
+            if (!File.Exists(configPath) || File.ReadAllText(configPath) != title && mediaType != "video") //Check if config file doesnt exist OR it exists with different title AND if the mediatype is not "video"
+            {
+                await DownloadPicture(results);
+            }
+            await Task.CompletedTask;
+        }
+
+        private async Task DownloadPicture(dynamic results)
+        {            
             description = results.explanation;
             pictureFolder = Path.Combine(Application.LocalUserAppDataPath, "img");
             picturePathDefault = Path.Combine(pictureFolder, "APODclear.jpg");
             if (!Directory.Exists(pictureFolder)) { Directory.CreateDirectory(pictureFolder); } // Check if the folder already exists, otherwise will create a folder in the user's Local                       
             using (WebClient client = new())
             {
-                if (mediaType == "image")
-                {
-                    pictureURL = results.hdurl;
-                    client.DownloadFile(pictureURL, picturePathDefault);                    
-                }
-                else { return; }
+                pictureURL = results.hdurl;
+                client.DownloadFile(pictureURL, picturePathDefault);
             }
-            var createConfig = File.Create(configPath); // For now, it creates blank file "activated" and on startup if it exists, it will start program silently on background
-            createConfig?.Dispose();
-            await Task.Run(SetWallpaper);
+            var createConfig = File.WriteAllTextAsync(configPath, title); // It create config txt file with of title name that was get from API for checking if the wallpaper is already downloaded            
+            await SetWallpaper();
             await Task.CompletedTask;
+            createConfig?.Dispose();
         }
         // Download and set the current picture as wallpaper
-        public async Task SetWallpaper()
-        {            
-            picturePathModified = Path.Combine(pictureFolder, "APODmodified.png");
-            using (var fileStream = new FileStream(picturePathDefault, FileMode.Open, FileAccess.Read))
+        private async Task SetWallpaper()
+        {
+            WallpaperAPODdraw wpAPODdraw = new();
+            picturePathModified = Path.Combine(pictureFolder, "APODmodified.png");           
+            pictureModified = Image.FromFile(picturePathDefault);            
+            using (Graphics graphic = Graphics.FromImage(pictureModified))
             {
-                pictureModified = Image.FromStream(fileStream);
-            }
-            var modifiedBitmap = new Bitmap(pictureModified);
-            using (Graphics graphic = Graphics.FromImage(modifiedBitmap))
-            {
-                RectangleF descriptionRect = await SetDescription(graphic, modifiedBitmap);
-                await SetTitle(graphic, modifiedBitmap, descriptionRect);
-                modifiedBitmap.Save(picturePathModified, ImageFormat.Png);
+                RectangleF descriptionRect = await wpAPODdraw.SetDescription(graphic, pictureModified, description);
+                await wpAPODdraw.SetTitle(graphic, pictureModified, descriptionRect, title, description);
+                pictureModified.Save(picturePathModified, ImageFormat.Png);
             }            
-            modifiedBitmap.Dispose(); // Dispose the modifiedBitmap object           
+            pictureModified.Dispose(); // Dispose the pictureModified object                       
             _ = SystemParametersInfo(0x14, 0, picturePathModified, 0x01 | 0x02);
             await Task.CompletedTask;
-        }
-        // Set title in image and size is by width and heigh of the image and add shadow
-        private async Task SetTitle(Graphics graphic, Image pictureModified, RectangleF descriptionRect)
-        {
-            int titlePadding = (int)(0.03 * pictureModified.Width);
-            float titleHeightRatio = Math.Max(Math.Min(pictureModified.Height * 0.005f, maxTitleHeightRatio), minTitleHeightRatio);
-            int titleHeight = (int)((pictureModified.Height) * titleHeightRatio);
-            int offset = (int)(pictureModified.Height * -0.035); // Set height above description
-            RectangleF titleRect = new(
-                    titlePadding,
-                    pictureModified.Height - titleHeight - 1.5f * titlePadding - offset,
-                    pictureModified.Width - 2 * titlePadding,
-                    titleHeight
-            );
-            float maxFontSize = titleRect.Height;
-            float titleFontSize = maxFontSize;
-            Font titleFont = new("Gill Sans Nova", titleFontSize, FontStyle.Bold);
-            SizeF textSize = graphic.MeasureString(title, titleFont, (int)descriptionRect.Width);
-            while (textSize.Height > titleRect.Height && titleFontSize > 1) 
-            {
-                titleFontSize--;
-                titleFont = new Font("Gill Sans Nova", titleFontSize, FontStyle.Bold);
-                textSize = graphic.MeasureString(description, titleFont, (int)titleRect.Width);
-            }
-            SolidBrush shadowBrush = new(Color.FromArgb(128, Color.Black));
-            SolidBrush textColor = new(Color.White);
-            StringFormat titleFormat = new() { Alignment = StringAlignment.Far };
-            float shadowOffset = pictureModified.Height * 0.002f;
-            RectangleF shadowRect = new RectangleF(titleRect.X + shadowOffset, titleRect.Y + shadowOffset, titleRect.Width, titleRect.Height);
-            graphic.DrawString(title, titleFont, shadowBrush, shadowRect, titleFormat); // draw title shadow
-            graphic.DrawString(title, titleFont, textColor, titleRect, titleFormat); // draw title
-            await Task.CompletedTask;
-        }
-        // Set description in image and size is by width and heigh of the image
-        private async Task<RectangleF> SetDescription(Graphics graphic, Image pictureModified)
-        {
-            int descriptionPadding = (int)(0.03 * pictureModified.Width);
-            float descriptionHeightRatio = Math.Max(Math.Min(pictureModified.Height * 0.0005f, maxDescriptionHeightRatio), minDescriptionHeightRatio);
-            int descriptionHeight = (int)((pictureModified.Height - 30) * descriptionHeightRatio);
-            int offset = (int)(pictureModified.Height * 0.0005);
-            RectangleF descriptionRect = new(
-                    descriptionPadding,
-                    pictureModified.Height - descriptionHeight - 2 * descriptionPadding - 10 - offset,
-                    pictureModified.Width - 2 * descriptionPadding,
-                    descriptionHeight
-            );
-            float maxFontSize = descriptionRect.Height;
-            float descriptionFontSize = maxFontSize;
-            Font descriptionFont = new("Gill Sans Nova", descriptionFontSize, FontStyle.Regular);
-            SizeF textSize = graphic.MeasureString(description, descriptionFont, (int)descriptionRect.Width);
-            while (textSize.Height > descriptionRect.Height && descriptionFontSize > 1)
-            {
-                descriptionFontSize--;
-                descriptionFont = new Font("Gill Sans Nova", descriptionFontSize, FontStyle.Regular);
-                textSize = graphic.MeasureString(description, descriptionFont, (int)descriptionRect.Width);
-            }
-            textColor = new SolidBrush(Color.White);
-            StringFormat descriptionFormat = new() { Alignment = StringAlignment.Far };
-            graphic.DrawString(description, descriptionFont, textColor, descriptionRect, descriptionFormat); // Draw the text using the calculated font size
-            await Task.CompletedTask;
-            return descriptionRect;
         }
         // Clear caches in the local app folder
         public static void ClearCache()

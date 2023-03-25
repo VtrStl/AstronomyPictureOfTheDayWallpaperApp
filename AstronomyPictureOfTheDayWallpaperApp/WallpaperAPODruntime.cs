@@ -12,7 +12,8 @@ namespace AstronomyPictureOfTheDayWallpaperApp
     public class WallpaperAPODruntime
     {
         private WallpaperAPODloader wpAPODloader;
-        private System.Timers.Timer? _timer;
+        private System.Timers.Timer? _dailytimer;
+        private System.Timers.Timer? _checkTimer;
         private TimeSpan TimeToUtc { get; set; }
 
         public WallpaperAPODruntime(WallpaperAPODloader wallpaperAPODloader)
@@ -31,48 +32,64 @@ namespace AstronomyPictureOfTheDayWallpaperApp
 
         public async Task StartTimer()
         {            
-            DateTime nextUtcFourPm = GetNextUtcFourPm(); // Get the next 16:10 am in UTC time 
+            DateTime nextUtcFourPm = GetNextUtcFourAm(); // Get the next 4am am in UTC time 
             TimeToUtc = nextUtcFourPm.Subtract(DateTime.UtcNow);
-            _timer = new System.Timers.Timer();
-            _timer.AutoReset = false;
-            if (TimeToUtc < TimeSpan.Zero) // If the next 16:10 am in UTC time has already passed, update the wallpaper now
+            _dailytimer = new System.Timers.Timer();
+            if (TimeToUtc < TimeSpan.Zero) // If the next 4am am in UTC time has already passed, update the wallpaper now
             {
-                await Task.Run(UpdateWallpaperAndRestartTimer);
-                TimeToUtc = GetNextUtcFourPm().Subtract(DateTime.UtcNow);
-            }
+                await UpdateWallpaperAndRestartDailyTimer(_dailytimer);
+                TimeToUtc = GetNextUtcFourAm().Subtract(DateTime.UtcNow);
+            }            
             // Set up the timer to update the wallpaper when the time elapses            
-            _timer.Interval = Math.Max(TimeToUtc.TotalMilliseconds, 1);
-            _timer.Elapsed += async (sender, e) => await UpdateWallpaperAndRestartTimer();
-            _timer.Start();
-            await Task.Delay(TimeToUtc);  // Wait for the timer to elapse
+            _dailytimer.Interval = Math.Max(TimeToUtc.TotalMilliseconds, 1);
+            _dailytimer.Elapsed += async (sender, e) => await UpdateWallpaperAndRestartDailyTimer(_dailytimer);
+            var checkTask = Task.Run(async () =>
+            {
+                _checkTimer = new System.Timers.Timer();
+                _checkTimer.Interval = 1 * 60 * 1000;
+                _checkTimer.Elapsed += async (sender, e) => await CheckForNewPhoto();
+                _checkTimer.Start();
+                await Task.Delay(-1); // wait indefinitely to prevent the task from completing
+            });
+            _dailytimer.Start();
+            await Task.Delay(TimeToUtc);  // Wait for the timer to elapse           
         }
 
-        private async Task UpdateWallpaperAndRestartTimer()
+        private async Task CheckForNewPhoto()
+        {
+            // Code to check for new photo in APOD goes here
+            // If there is a new photo, update the wallpaper
+            await wpAPODloader.LoadPicture();
+        }
+
+        private async Task UpdateWallpaperAndRestartDailyTimer(System.Timers.Timer _dailytimer)
         {            
             await wpAPODloader.LoadPicture(); // Update the wallpaper
-            DateTime nextUTCtime = GetNextUtcFourPm(); // Restart the timer
+            DateTime nextUTCtime = GetNextUtcFourAm(); // Restart the timer
             TimeToUtc = nextUTCtime.Subtract(DateTime.UtcNow);
-            _timer.Interval = Math.Max(TimeToUtc.TotalMilliseconds, 1);
+            _dailytimer.Interval = Math.Max(TimeToUtc.TotalMilliseconds, 1);
         }
         // Get and set the UTC time and set another day
-        private static DateTime GetNextUtcFourPm()
+        private static DateTime GetNextUtcFourAm()
         {
             DateTime utcTime = DateTime.UtcNow;
-            DateTime nextUtcFourPm = new(utcTime.Year, utcTime.Month, utcTime.Day, 16, 10, 0, 0, DateTimeKind.Utc);
-            // If the current time is greater than or equal to the next 4:00 PM UTC time, add 1 day
+            DateTime nextUtcFourPm = new(utcTime.Year, utcTime.Month, utcTime.Day, 4, 15, 0, 0, DateTimeKind.Unspecified);
+            // If the current time is greater than or equal to the next 4:15 AM UTC time, add 1 day
             if (utcTime >= nextUtcFourPm)
             {
-                nextUtcFourPm = nextUtcFourPm.AddMinutes(1);
+                nextUtcFourPm = nextUtcFourPm.AddDays(1);
             }
             return nextUtcFourPm;
         }
-
-        public void StopTimer()
+        // Stop the timers when user click on "Deactive"
+        public void StopTimers()
         {
-            if (_timer != null)
+            if (_dailytimer != null && _checkTimer != null)
             {
-                _timer.Stop();
-                _timer.Dispose();
+                _dailytimer.Stop();
+                _dailytimer.Dispose();
+                _checkTimer.Stop();
+                _checkTimer.Dispose();
             }
         }
     }

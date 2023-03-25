@@ -48,29 +48,6 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             }
         }
 
-        private async void ActivateBT_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                await Task.Run(wpAPODloader.LoadPicture);
-                MessageBox.Show(WallpaperAPODruntime.ConfigExists().ToString());
-                UpdateStatusLabel(true);
-                UpdateTrayIcon(true);
-            }
-            catch (Exception ex) { MessageBox.Show("Error: " + ex.Message); }
-        }
-
-        private void DeactivateBT_Click(object sender, EventArgs e)
-        {
-            if (MessageBox.Show("Do you really want to deactivate this app and all processes and clear the cache?", "Warning",
-                MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
-            {
-                WallpaperAPODloader.ClearCache();
-                UpdateStatusLabel(false);
-                UpdateTrayIcon(false);
-            }
-        }
-
         private void UpdateStatusLabel(bool isActive)
         {
             StatusLabel.Text = isActive ? "The application is active" : "The application is not active";
@@ -84,9 +61,28 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             NotificationIcon.Icon = new Icon(Path.Combine(iconFolder, iconName));
         }
 
-        private async void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        private async void ActivateBT_Click(object sender, EventArgs e)
         {
-            await Task.Run(wallpaperAPODruntime.StopTimer);
+            try
+            {
+                await Task.Run(wpAPODloader.LoadPicture);
+                MessageBox.Show(WallpaperAPODruntime.ConfigExists().ToString());
+                UpdateStatusLabel(true);
+                UpdateTrayIcon(true);
+            }
+            catch (Exception ex) { MessageBox.Show("Error: " + ex.Message); }
+        }
+
+        private async void DeactivateBT_Click(object sender, EventArgs e)
+        {
+            if (MessageBox.Show("Do you really want to deactivate this app and all processes and clear the cache?", "Warning",
+                MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
+            {
+                WallpaperAPODloader.ClearCache();
+                UpdateStatusLabel(false);
+                UpdateTrayIcon(false);
+                await Task.Run(wallpaperAPODruntime.StopTimers);
+            }
         }
     }
 }

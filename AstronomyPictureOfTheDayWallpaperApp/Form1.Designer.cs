@@ -111,7 +111,6 @@
             Name = "Form1";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "APOD Wallpaper Manager";
-            FormClosing += Form1_FormClosing;
             Load += Form1_Load;
             SizeChanged += Form1_SizeChanged;
             tableLayoutPanel1.ResumeLayout(false);
