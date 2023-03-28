@@ -8,9 +8,6 @@ using System.Threading.Tasks;
 using System.Runtime.InteropServices;
 using Newtonsoft.Json;
 using System.Drawing.Imaging;
-using System.Drawing;
-using Microsoft.VisualBasic.Devices;
-using System.Runtime.CompilerServices;
 
 namespace AstronomyPictureOfTheDayWallpaperApp
 {
@@ -33,24 +30,47 @@ namespace AstronomyPictureOfTheDayWallpaperApp
         private dynamic? results;
         // Image related variables   
         private Image? pictureModified;
-                   
+        // Class variable
+        private WallpaperAPODruntime wpAPODruntime;
+        private Form1 form;
+        
+        // Loading methods from other classes
+        public void LoadAssets(WallpaperAPODruntime _wallpaperAPODruntime, Form1 _form)
+        {
+            wpAPODruntime = _wallpaperAPODruntime;
+            form = _form;
+        }
+        // Validation for WallpaperAPODruntime for stopping 
+        public bool IsMediaTypeVideo() 
+        {
+            if (results.media_type == "video") { return true; }
+            else { return false; }
+        }
+        
         // Load the current picture and title from the site https://apod.nasa.gov/apod/ and all the important things that will be used in another methods
         public async Task LoadPicture()
         {
             using (WebClient client = new())
             {
                 json = await client.DownloadStringTaskAsync(url + api);
-            }            
+            }
             results = JsonConvert.DeserializeObject<dynamic>(json);
             title = results.title;
             string mediaType = results.media_type;
-            if (!File.Exists(configPath) || File.ReadAllText(configPath) != title && mediaType != "video") //Check if config file doesnt exist OR it exists with different title AND if the mediatype is not "video"
+            if ((!File.Exists(configPath) && mediaType != "video" ||                                       // Check if config file doesnt exist
+                (File.Exists(configPath) && File.ReadAllText(configPath) != title && !IsMediaTypeVideo()))) // OR it exists with different title AND if the mediatype is not "video"
             {
                 await DownloadPicture(results);
             }
+            if (IsMediaTypeVideo()) 
+            { 
+                await Task.Run(wpAPODruntime.StopCheckTimerForToday); 
+                form.ShowBaloonTipVideo();
+                await CreateConfig();
+            }
             await Task.CompletedTask;
         }
-
+        // Download the Picture when every condition is correct
         private async Task DownloadPicture(dynamic results)
         {            
             description = results.explanation;
@@ -62,10 +82,9 @@ namespace AstronomyPictureOfTheDayWallpaperApp
                 pictureURL = results.hdurl;
                 client.DownloadFile(pictureURL, picturePathDefault);
             }
-            var createConfig = File.WriteAllTextAsync(configPath, title); // It create config txt file with of title name that was get from API for checking if the wallpaper is already downloaded            
+            CreateConfig(); // It create config txt file with of title name that was get from API for checking if the wallpaper is already downloaded            
             await SetWallpaper();
             await Task.CompletedTask;
-            createConfig?.Dispose();
         }
         // Download and set the current picture as wallpaper
         private async Task SetWallpaper()
@@ -79,9 +98,28 @@ namespace AstronomyPictureOfTheDayWallpaperApp
                 await wpAPODdraw.SetTitle(graphic, pictureModified, descriptionRect, title, description);
                 pictureModified.Save(picturePathModified, ImageFormat.Png);
             }            
-            pictureModified.Dispose(); // Dispose the pictureModified object                       
+            pictureModified.Dispose(); // Dispose the pictureModified object
             _ = SystemParametersInfo(0x14, 0, picturePathModified, 0x01 | 0x02);
             await Task.CompletedTask;
+        }
+        // Create config file with title of the picture on txt file for checking, if the current wallpaper is the same on the web before downloading. This method will also create lnk shortcut on the local Startup folder
+        private async Task CreateConfig()
+        {
+            using (var fileStream = new FileStream(configPath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 4096, useAsync: true))
+            {
+                await fileStream.WriteAsync(Encoding.UTF8.GetBytes(title));
+            }
+        }
+        // If something goes wrong and it's not handled properly, this gonna create traceback txt file on app local folder.
+        public static void CreateExceptionLog(Exception ex)
+        {
+            string timeStamp = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss-fff");
+            string filePath = Path.Combine(Application.LocalUserAppDataPath, $"Tracetrack_{timeStamp}.txt");
+            using (StreamWriter sw = new(filePath))
+            {
+                sw.WriteLine($"Error occurred at {DateTime.Now}:\n{ex.Message}\n{ex.StackTrace}");
+                sw.DisposeAsync();
+            }
         }
         // Clear caches in the local app folder
         public static void ClearCache()

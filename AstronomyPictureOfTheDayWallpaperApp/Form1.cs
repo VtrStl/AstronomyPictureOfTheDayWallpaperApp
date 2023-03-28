@@ -1,3 +1,4 @@
+using System.Net;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
@@ -5,13 +6,16 @@ namespace AstronomyPictureOfTheDayWallpaperApp
 {
     public partial class Form1 : Form
     {
-        private WallpaperAPODloader wpAPODloader = new();
-        protected WallpaperAPODruntime wallpaperAPODruntime;
-        private bool configExists = WallpaperAPODruntime.ConfigExists();
+        private WallpaperAPODloader wpAPODloader;
+        private WallpaperAPODruntime wallpaperAPODruntime;
+        private bool configExists;
         public Form1()
         {
             InitializeComponent();
-            wallpaperAPODruntime = new WallpaperAPODruntime(wpAPODloader);
+            wpAPODloader = new WallpaperAPODloader();
+            wallpaperAPODruntime = new WallpaperAPODruntime(wpAPODloader, this);            
+            wpAPODloader.LoadAssets(wallpaperAPODruntime, this);
+            configExists =  WallpaperAPODruntime.ConfigExists();
             UpdateTrayIcon(configExists);
         }
 
@@ -24,8 +28,8 @@ namespace AstronomyPictureOfTheDayWallpaperApp
                 Visible = false;
                 ShowInTaskbar = false;
                 UpdateStatusLabel(true);
-                await wallpaperAPODruntime.StartTimer();
-            }
+                await wallpaperAPODruntime.StartTimers();
+            }            
         }
 
         private void NotificationIcon_MouseDoubleClick(object sender, MouseEventArgs e)
@@ -54,25 +58,54 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             StatusLabel.ForeColor = isActive ? Color.Green : Color.Red;
         }
 
-        private void UpdateTrayIcon(bool configExists)
+        private void UpdateTrayIcon(bool isActive)
         {
-            string iconFolder = Path.Combine(Application.StartupPath, "..", "..", "..", "Icons");
-            string iconName = configExists ? "APODiconGreen.ico" : "APODicon.ico";
+            string iconFolder = Path.Combine(Application.StartupPath, "..", "..", "..", "Icons"); // Need change path before build to single exe
+            string iconName = isActive ? "APODiconGreen.ico" : "APODicon.ico";
             NotificationIcon.Icon = new Icon(Path.Combine(iconFolder, iconName));
         }
 
+        public void ShowBaloonTipRetry()
+        {
+            NotificationIcon.ShowBalloonTip(20000, "Warning", "it seems there is no connection to internet, I will retry after 15 minutes", ToolTipIcon.Warning);
+        }
+
+        public void ShowBaloonTipVideo()
+        {
+            NotificationIcon.ShowBalloonTip(20000, "Information", "Today APOD is video format, Wallpaper will not change today and checker timer stopped", ToolTipIcon.Info);
+        }
+        
+        public void ShowErrorMessageBox(Exception ex)
+        {
+            MessageBox.Show("Unhandled error accure: " + ex.Message + $" \nRestart the app and check {Application.LocalUserAppDataPath} folder for tracetrack",
+                    "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+        // Activate the app and even if media type is video, it will create configFile and lnk shortcun, but after when its done, its needed restart the app 
         private async void ActivateBT_Click(object sender, EventArgs e)
         {
             try
             {
-                await Task.Run(wpAPODloader.LoadPicture);
-                MessageBox.Show(WallpaperAPODruntime.ConfigExists().ToString());
-                UpdateStatusLabel(true);
-                UpdateTrayIcon(true);
+                await wpAPODloader.LoadPicture();
+                StatusLabel.Text = "Restart this app for the changes to take effect";
+                StatusLabel.ForeColor = Color.Black;
+                MessageBox.Show("Activation was successful, please restart the app for proper function");
             }
-            catch (Exception ex) { MessageBox.Show("Error: " + ex.Message); }
+            catch (Exception ex) 
+            { 
+                if (ex is WebException webEx)
+                {
+                    if (webEx.Status == WebExceptionStatus.NameResolutionFailure)
+                    {
+                        MessageBox.Show("There is no internet connection", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
+                    }
+                }
+                WallpaperAPODloader.CreateExceptionLog(ex);
+                MessageBox.Show("Unhandled error accure: " + ex.Message + " \nRestart the app and check your applocal folder for tracetrack",
+                    "error", MessageBoxButtons.OK, MessageBoxIcon.Error); 
+            }
         }
-
+        // Deactivate the app and remove all traces from app local folder and remove startup lnk file.
         private async void DeactivateBT_Click(object sender, EventArgs e)
         {
             if (MessageBox.Show("Do you really want to deactivate this app and all processes and clear the cache?", "Warning",
