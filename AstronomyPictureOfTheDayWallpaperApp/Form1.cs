@@ -1,6 +1,8 @@
 using System.Net;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.ToolTip;
 
 namespace AstronomyPictureOfTheDayWallpaperApp
 {
@@ -12,13 +14,12 @@ namespace AstronomyPictureOfTheDayWallpaperApp
         public Form1()
         {
             InitializeComponent();
-            wpAPODloader = new WallpaperAPODloader();
+            wpAPODloader = new WallpaperAPODloader(this);
             wallpaperAPODruntime = new WallpaperAPODruntime(wpAPODloader, this);            
-            wpAPODloader.LoadAssets(wallpaperAPODruntime, this);
             configExists =  WallpaperAPODruntime.ConfigExists();
             UpdateTrayIcon(configExists);
         }
-
+        // Set up the notification icon and start the wallpaper APOD manager if a configuration file exists.
         private async void Form1_Load(object sender, EventArgs e)
         {
             NotificationIcon.BalloonTipTitle = "APOD Wallpaper Manager";
@@ -31,7 +32,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
                 await wallpaperAPODruntime.StartTimers();
             }            
         }
-
+        // This method restores the window state and sets the form as top-level when the notification icon is double-clicked. Commend: "Restores window state and sets as top-level on notification icon double-click."
         private void NotificationIcon_MouseDoubleClick(object sender, MouseEventArgs e)
         {
             WindowState = FormWindowState.Normal;
@@ -41,7 +42,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
                 TopLevel = true;
             }
         }
-
+        // Hide form from taskbar when minimized if mouse not on taskbar.
         public void Form1_SizeChanged(object sender, EventArgs e)
         {
             bool MousePointerNotOnTaskBar = Screen.GetWorkingArea(this).Contains(Cursor.Position);
@@ -51,13 +52,13 @@ namespace AstronomyPictureOfTheDayWallpaperApp
                 TopLevel = false;
             }
         }
-
+        // Updates the status label based on the isActive parameter.
         private void UpdateStatusLabel(bool isActive)
         {
             StatusLabel.Text = isActive ? "The application is active" : "The application is not active";
             StatusLabel.ForeColor = isActive ? Color.Green : Color.Red;
         }
-
+        // Updates the tray icon based on the isActive parameter.
         private void UpdateTrayIcon(bool isActive)
         {
             string iconFolder = Path.Combine(Application.StartupPath, "..", "..", "..", "Icons"); // Need change path before build to single exe
@@ -67,12 +68,12 @@ namespace AstronomyPictureOfTheDayWallpaperApp
 
         public void ShowBaloonTipRetry()
         {
-            NotificationIcon.ShowBalloonTip(20000, "Warning", "it seems there is no connection to internet, I will retry after 15 minutes", ToolTipIcon.Warning);
+            NotificationIcon.ShowBalloonTip(10000, "Warning", "it seems there is no connection to internet, I will retry after 15 minutes", ToolTipIcon.Warning);
         }
 
         public void ShowBaloonTipVideo()
         {
-            NotificationIcon.ShowBalloonTip(20000, "Information", "Today APOD is video format, Wallpaper will not change today and checker timer stopped", ToolTipIcon.Info);
+            NotificationIcon.ShowBalloonTip(10000, "Information", "Today APOD is video format, Wallpaper will not change today and checker timer stopped", ToolTipIcon.Info);
         }
         
         public void ShowErrorMessageBox(Exception ex)

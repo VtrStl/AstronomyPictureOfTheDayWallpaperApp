@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Runtime.InteropServices;
 using Newtonsoft.Json;
 using System.Drawing.Imaging;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace AstronomyPictureOfTheDayWallpaperApp
 {
@@ -19,6 +20,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
         private readonly string url = "https://api.nasa.gov/planetary/apod?api_key=";
         private readonly string api = "3mCppAwIDyPLdiEMfBFovfWjpwmrp3KIgGTFRCKO";
         public static string configPath = Path.Combine(Application.LocalUserAppDataPath, "config.txt");
+        public static string ShortcutPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), "WallpaperAPOD.lnk");
         private string json = string.Empty;
         private string pictureURL = string.Empty;
         private string title = string.Empty;
@@ -31,20 +33,18 @@ namespace AstronomyPictureOfTheDayWallpaperApp
         // Image related variables   
         private Image? pictureModified;
         // Class variable
-        private WallpaperAPODruntime wpAPODruntime;
         private Form1 form;
         
-        // Loading methods from other classes
-        public void LoadAssets(WallpaperAPODruntime _wallpaperAPODruntime, Form1 _form)
+        // Loading methods from Form class      
+        public WallpaperAPODloader(Form1 _form)
         {
-            wpAPODruntime = _wallpaperAPODruntime;
             form = _form;
         }
-        // Validation for WallpaperAPODruntime for stopping 
+                
+        // Validation for WallpaperAPODruntime for stopping _checkTimer
         public bool IsMediaTypeVideo() 
         {
-            if (results.media_type == "video") { return true; }
-            else { return false; }
+            return results.media_type == "video";            
         }
         
         // Load the current picture and title from the site https://apod.nasa.gov/apod/ and all the important things that will be used in another methods
@@ -64,9 +64,10 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             }
             if (IsMediaTypeVideo()) 
             { 
-                await Task.Run(wpAPODruntime.StopCheckTimerForToday); 
+            //    await Task.Run(wpAPODruntime.StopCheckTimerForToday); 
                 form.ShowBaloonTipVideo();
                 await CreateConfig();
+                await CreateOnStartupShortcut();
             }
             await Task.CompletedTask;
         }
@@ -82,8 +83,9 @@ namespace AstronomyPictureOfTheDayWallpaperApp
                 pictureURL = results.hdurl;
                 client.DownloadFile(pictureURL, picturePathDefault);
             }
-            CreateConfig(); // It create config txt file with of title name that was get from API for checking if the wallpaper is already downloaded            
+            await CreateConfig(); // It create config txt file with of title name that was get from API for checking if the wallpaper is already downloaded                        
             await SetWallpaper();
+            await CreateOnStartupShortcut();             
             await Task.CompletedTask;
         }
         // Download and set the current picture as wallpaper
@@ -108,7 +110,27 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             using (var fileStream = new FileStream(configPath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 4096, useAsync: true))
             {
                 await fileStream.WriteAsync(Encoding.UTF8.GetBytes(title));
+                await fileStream.FlushAsync();
             }
+        }
+        // This method asynchronously creates a shortcut of the WallpaperAPOD application in the Windows Startup folder by invoking the CreateShortcut method of the WallpaperAPODshortcut class.
+        private async Task CreateOnStartupShortcut()
+        {
+             await Task.Run(WallpaperAPODshortcut.CreateShortcut);
+        }
+        // Clear caches in the local app folder
+        public static void ClearCache()
+        {
+            string cacheFolder = Application.LocalUserAppDataPath;
+            if (Directory.Exists(cacheFolder))
+            {
+                Directory.Delete(cacheFolder, true);
+            }
+            if (File.Exists(ShortcutPath))
+            {
+                WallpaperAPODshortcut.DeleteShortcut();
+            }
+
         }
         // If something goes wrong and it's not handled properly, this gonna create traceback txt file on app local folder.
         public static void CreateExceptionLog(Exception ex)
@@ -118,16 +140,6 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             using (StreamWriter sw = new(filePath))
             {
                 sw.WriteLine($"Error occurred at {DateTime.Now}:\n{ex.Message}\n{ex.StackTrace}");
-                sw.DisposeAsync();
-            }
-        }
-        // Clear caches in the local app folder
-        public static void ClearCache()
-        {
-            string cacheFolder = Application.LocalUserAppDataPath;
-            if (Directory.Exists(cacheFolder))
-            {
-                Directory.Delete(cacheFolder, true);
             }
         }
     }
