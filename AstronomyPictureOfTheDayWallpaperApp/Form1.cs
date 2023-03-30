@@ -1,8 +1,4 @@
 using System.Net;
-using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.ToolTip;
 
 namespace AstronomyPictureOfTheDayWallpaperApp
 {
@@ -61,7 +57,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
         // Updates the tray icon based on the isActive parameter.
         private void UpdateTrayIcon(bool isActive)
         {
-            string iconFolder = Path.Combine(Application.StartupPath, "..", "..", "..", "Icons"); // Need change path before build to single exe
+            string iconFolder = Path.Combine(Application.StartupPath,"..", "..", "..", "Icons"); // Need change path before build to single exe
             string iconName = isActive ? "APODiconGreen.ico" : "APODicon.ico";
             NotificationIcon.Icon = new Icon(Path.Combine(iconFolder, iconName));
         }

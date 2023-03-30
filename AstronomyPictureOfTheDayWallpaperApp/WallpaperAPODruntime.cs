@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.ServiceProcess;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Net;
+﻿using System.Net;
 
 namespace AstronomyPictureOfTheDayWallpaperApp
 {
@@ -47,7 +40,8 @@ namespace AstronomyPictureOfTheDayWallpaperApp
                 TimeToUtc = GetNextUtcFiveAm().Subtract(DateTime.UtcNow);
             }                                            
             _dailytimer.Interval = Math.Max(TimeToUtc.TotalMilliseconds, 1); // Set up the timer to update the wallpaper when the time elapses   
-            _dailytimer.Elapsed += async (sender, e) => await UpdateWallpaperAndRestartDailyTimer(_dailytimer, _checkTimer);            
+            _dailytimer.Elapsed += async (sender, e) => await UpdateWallpaperAndRestartDailyTimer(_dailytimer, _checkTimer);
+            _dailytimer.Start();
 
             // Set up one-time timer to check for new photo after 1 minute after program started on background
             _oneTimeTimer = new System.Timers.Timer();
@@ -55,7 +49,6 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             _oneTimeTimer.Interval = 1 * 60 * 1000;
             _oneTimeTimer.Elapsed += async (sender, e) => await CheckForNewPhoto(_checkTimer);
             _oneTimeTimer.Start();
-            _dailytimer.Start();
             await Task.Delay(TimeToUtc);  // Wait for the timer to elapse           
         }
         // Code to check for new photo in APOD goes here. If there is a new photo, update the wallpaper

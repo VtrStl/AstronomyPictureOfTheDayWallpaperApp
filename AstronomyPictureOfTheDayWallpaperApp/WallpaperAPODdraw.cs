@@ -1,12 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Drawing.Imaging;
-using System.Drawing;
-
-namespace AstronomyPictureOfTheDayWallpaperApp
+﻿namespace AstronomyPictureOfTheDayWallpaperApp
 {
     public class WallpaperAPODdraw
     {
@@ -15,9 +7,9 @@ namespace AstronomyPictureOfTheDayWallpaperApp
         const float maxTitleHeightRatio = 0.24f;
         const float minDescriptionHeightRatio = 0.05f;
         const float maxDescriptionHeightRatio = 0.13f;
-        
+
         // Set title in image and size is by width and heigh of the image and add shadow
-        public async Task SetTitle(Graphics graphic, Image pictureModified, RectangleF descriptionRect, string title, string description)
+        public void SetTitle(Graphics graphic, Image pictureModified, RectangleF descriptionRect, string title, string description)
         {
             int titlePadding = (int)(0.03 * pictureModified.Width);
             float titleHeightRatio = Math.Max(Math.Min(pictureModified.Height * 0.005f, maxTitleHeightRatio), minTitleHeightRatio);
@@ -35,7 +27,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             SizeF textSize = graphic.MeasureString(title, titleFont, (int)descriptionRect.Width);
             while (textSize.Height > titleRect.Height && titleFontSize > 1)
             {
-                titleFontSize--;
+                titleFontSize = titleFontSize - 2;
                 titleFont = new Font("Gill Sans Nova", titleFontSize, FontStyle.Bold);
                 textSize = graphic.MeasureString(description, titleFont, (int)titleRect.Width);
             }
@@ -45,11 +37,10 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             float shadowOffset = pictureModified.Height * 0.002f;
             RectangleF shadowRect = new(titleRect.X + shadowOffset, titleRect.Y + shadowOffset, titleRect.Width, titleRect.Height);
             graphic.DrawString(title, titleFont, shadowBrush, shadowRect, titleFormat); // draw title shadow
-            graphic.DrawString(title, titleFont, textColor, titleRect, titleFormat); // draw title
-            await Task.CompletedTask;            
+            graphic.DrawString(title, titleFont, textColor, titleRect, titleFormat); // draw title                      
         }
         // Set description in image and size is by width and heigh of the image
-        public async Task<RectangleF> SetDescription(Graphics graphic, Image pictureModified, string description)
+        public RectangleF SetDescription(Graphics graphic, Image pictureModified, string description)
         {
             int descriptionPadding = (int)(0.03 * pictureModified.Width);
             float descriptionHeightRatio = Math.Max(Math.Min(pictureModified.Height * 0.0005f, maxDescriptionHeightRatio), minDescriptionHeightRatio);
@@ -67,14 +58,13 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             SizeF textSize = graphic.MeasureString(description, descriptionFont, (int)descriptionRect.Width);
             while (textSize.Height > descriptionRect.Height && descriptionFontSize > 1)
             {
-                descriptionFontSize--;
+                descriptionFontSize = descriptionFontSize - 2;
                 descriptionFont = new Font("Gill Sans Nova", descriptionFontSize, FontStyle.Regular);
                 textSize = graphic.MeasureString(description, descriptionFont, (int)descriptionRect.Width);
             }
             textColor = new SolidBrush(Color.White);
             StringFormat descriptionFormat = new() { Alignment = StringAlignment.Far };
             graphic.DrawString(description, descriptionFont, textColor, descriptionRect, descriptionFormat); // Draw the text using the calculated font size
-            await Task.CompletedTask;
             return descriptionRect;
         }
     }

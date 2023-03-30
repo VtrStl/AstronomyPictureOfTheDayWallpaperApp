@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.IO;
-using System.Net;
+﻿using System.Net;
 using System.Text;
-using System.Threading.Tasks;
 using System.Runtime.InteropServices;
 using Newtonsoft.Json;
 using System.Drawing.Imaging;
@@ -18,7 +13,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
         // String variables
         private readonly string url = "https://api.nasa.gov/planetary/apod?api_key=";
         public static string configPath = Path.Combine(Application.LocalUserAppDataPath, "config.txt");
-        private string apiPath = Path.Combine(Application.StartupPath, "..", "..", "..", "apikey.txt"); // Need change path before release
+        private string apiPath = Path.Combine(Application.StartupPath,"..", "..", "..", "apikey.txt"); // Need change path before release
         private string json = string.Empty;
         private string pictureURL = string.Empty;
         private string title = string.Empty;
@@ -64,10 +59,9 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             if (IsMediaTypeVideo()) 
             {  
                 form.ShowBaloonTipVideo();
-                await CreateConfig();
-                await CreateOnStartupShortcut();
+                await CreateConfig().ConfigureAwait(false);
+                await CreateOnStartupShortcut().ConfigureAwait(false);
             }
-            await Task.CompletedTask;
         }
         // Download the Picture when every condition is correct
         private async Task DownloadPicture(dynamic results)
@@ -79,28 +73,27 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             using (WebClient client = new())
             {
                 pictureURL = results.hdurl;
-                client.DownloadFile(pictureURL, picturePathDefault);
+                await client.DownloadFileTaskAsync(pictureURL, picturePathDefault);
             }
-            await CreateConfig(); // It create config txt file with of title name that was get from API for checking if the wallpaper is already downloaded                        
-            await SetWallpaper();
-            await CreateOnStartupShortcut();             
-            await Task.CompletedTask;
+            await CreateConfig().ConfigureAwait(false); // It create config txt file with of title name that was get from API for checking if the wallpaper is already downloaded                        
+            await SetWallpaper().ConfigureAwait(false);
+            await CreateOnStartupShortcut().ConfigureAwait(false);
         }
         // Download and set the current picture as wallpaper
-        private async Task SetWallpaper()
+        private Task SetWallpaper()
         {
             WallpaperAPODdraw wpAPODdraw = new();
             picturePathModified = Path.Combine(pictureFolder, "APODmodified.png");           
             pictureModified = Image.FromFile(picturePathDefault);            
             using (Graphics graphic = Graphics.FromImage(pictureModified))
             {
-                RectangleF descriptionRect = await wpAPODdraw.SetDescription(graphic, pictureModified, description);
-                await wpAPODdraw.SetTitle(graphic, pictureModified, descriptionRect, title, description);
+                RectangleF descriptionRect = wpAPODdraw.SetDescription(graphic, pictureModified, description);
+                wpAPODdraw.SetTitle(graphic, pictureModified, descriptionRect, title, description);
                 pictureModified.Save(picturePathModified, ImageFormat.Png);
             }            
             pictureModified.Dispose(); // Dispose the pictureModified object
             _ = SystemParametersInfo(0x14, 0, picturePathModified, 0x01 | 0x02);
-            await Task.CompletedTask;
+            return Task.CompletedTask;
         }
         // Create config file with title of the picture on txt file for checking, if the current wallpaper is the same on the web before downloading. This method will also create lnk shortcut on the local Startup folder
         private async Task CreateConfig()
