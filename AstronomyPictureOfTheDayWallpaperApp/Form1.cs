@@ -78,7 +78,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
         
         public void ShowErrorMessageBox(Exception ex)
         {
-            MessageBox.Show("Unhandled error accure: " + ex.Message + $" \nRestart the app and check {Application.LocalUserAppDataPath} folder for tracetrack",
+            MessageBox.Show("Unhandled error accure: " + ex.Message + $" \nRestart the app and check {Application.LocalUserAppDataPath} folder for tracetrack. Please restart the app",
                     "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
         // Activate the app and even if media type is video, it will create configFile and lnk shortcun, but after when its done, its needed restart the app 

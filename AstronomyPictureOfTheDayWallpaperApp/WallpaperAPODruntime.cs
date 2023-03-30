@@ -26,11 +26,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
         // Check if the config files exists before run the other methods in WallpaperAPODruntime and return True/False.
         public static bool ConfigExists()
         {
-            if (File.Exists(WallpaperAPODloader.configPath))
-            {
-                return true;                
-            }
-            return false;
+            return File.Exists(WallpaperAPODloader.configPath);
         }
         // Start the timer when config files exists and app is activated state
         public async Task StartTimers()
@@ -90,7 +86,19 @@ namespace AstronomyPictureOfTheDayWallpaperApp
                         form.ShowBaloonTipRetry();
                         await Task.Delay(10 * 60 * 1000);
                     }
-                }
+                    else if (webEx.Response is HttpWebResponse response && response.StatusCode == HttpStatusCode.Forbidden)
+                    {
+                        WallpaperAPODloader.CreateExceptionLog(webEx);
+                        MessageBox.Show($"Error: \n{webEx.Message}\nInvalid API key probably.\nRestart the app and check apikey.txt or traceback", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        retry = false;
+                    }
+                    else
+                    {
+                        WallpaperAPODloader.CreateExceptionLog(webEx);
+                        form.ShowErrorMessageBox(webEx);
+                        retry = false;
+                    }
+                }                
                 catch (Exception ex)
                 {
                     WallpaperAPODloader.CreateExceptionLog(ex);
@@ -123,11 +131,11 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             return nextUtcFourPm;
         }
         // Checks if the current UTC time is before 4:15 AM, and returns true if so. Used to deactivate the '_checkertimer'.
-        private bool IsTimeToStopCheckTimer()
+        private static bool IsTimeToStopCheckTimer()
         {
             DateTime utcTime = DateTime.UtcNow;
-            DateTime stopCheckTime = new DateTime(utcTime.Year, utcTime.Month, utcTime.Day, 4, 15, 0, 0, DateTimeKind.Utc); // 1 hour before 5:15 am UTC
-            return utcTime <= stopCheckTime; // Return true if its less 4:15 AM UTC time and deactivate the _checkertimer         
+            DateTime nextUtcFiveAm = GetNextUtcFiveAm();                            
+            return nextUtcFiveAm.Subtract(utcTime) <= TimeSpan.FromHours(1);  // If the time until the next 5:00 AM UTC is less than an hour, stop checking   
         }
         // Stop the timers when user click on "Deactive"       
         public void StopTimers()
