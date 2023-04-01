@@ -18,6 +18,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
         private string pictureURL = string.Empty;
         private string title = string.Empty;
         private string description = string.Empty;
+        private string mediaType = string.Empty;
         private string pictureFolder = string.Empty;
         private string picturePathDefault = string.Empty;
         private string picturePathModified = string.Empty;
@@ -37,20 +38,20 @@ namespace AstronomyPictureOfTheDayWallpaperApp
         // Validation for WallpaperAPODruntime for stopping _checkTimer
         public bool IsMediaTypeVideo() 
         {
-            return results.media_type == "video";            
+            return results.media_type == "video";         
         }
         
         // Load the current picture and title from the site https://apod.nasa.gov/apod/ and all the important things that will be used in another methods
         public async Task LoadPicture()
         {
             string api = File.ReadAllText(apiPath);
-            using (WebClient client = new())
+            using (HttpClient client = new())
             {
-                json = await client.DownloadStringTaskAsync(url + api);
+                json = await client.GetStringAsync(url + api);
             }
-            results = JsonConvert.DeserializeObject<dynamic>(json);
+            results = JsonConvert.DeserializeObject<dynamic>(json);            
             title = results.title;
-            string mediaType = results.media_type;
+            mediaType = results.media_type;
             if ((!File.Exists(configPath) && mediaType != "video" ||                                       // Check if config file doesnt exist
                 (File.Exists(configPath) && File.ReadAllText(configPath) != title && !IsMediaTypeVideo()))) // OR it exists with different title AND if the mediatype is not "video"
             {
@@ -70,30 +71,37 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             pictureFolder = Path.Combine(Application.LocalUserAppDataPath, "img");
             picturePathDefault = Path.Combine(pictureFolder, "APODclear.jpg");
             if (!Directory.Exists(pictureFolder)) { Directory.CreateDirectory(pictureFolder); } // Check if the folder already exists, otherwise will create a folder in the user's Local                       
-            using (WebClient client = new())
+            using (HttpClient client = new())
             {
                 pictureURL = results.hdurl;
-                await client.DownloadFileTaskAsync(pictureURL, picturePathDefault);
+                using (HttpResponseMessage response = await client.GetAsync(pictureURL, HttpCompletionOption.ResponseHeadersRead))
+                using (Stream streamToReadFrom = await response.Content.ReadAsStreamAsync())
+                {
+                    using (Stream streamToWriteTo = File.Open(picturePathDefault, FileMode.Create))
+                    {
+                        await streamToReadFrom.CopyToAsync(streamToWriteTo, 65536); // Maybe need modify buffer size later, now thisis ideal size of 64kb.
+                    }
+                }
             }
-            await CreateConfig().ConfigureAwait(false); // It create config txt file with of title name that was get from API for checking if the wallpaper is already downloaded                        
-            await SetWallpaper().ConfigureAwait(false);
-            await CreateOnStartupShortcut().ConfigureAwait(false);
+            await CreateConfig(); // It create config txt file with of title name that was get from API for checking if the wallpaper is already downloaded                        
+            await SetWallpaper();
+            await CreateOnStartupShortcut();
         }
         // Download and set the current picture as wallpaper
-        private Task SetWallpaper()
+        private async Task SetWallpaper()
         {
             WallpaperAPODdraw wpAPODdraw = new();
             picturePathModified = Path.Combine(pictureFolder, "APODmodified.png");           
             pictureModified = Image.FromFile(picturePathDefault);            
             using (Graphics graphic = Graphics.FromImage(pictureModified))
             {
-                RectangleF descriptionRect = wpAPODdraw.SetDescription(graphic, pictureModified, description);
+                RectangleF descriptionRect = await wpAPODdraw.SetDescription(graphic, pictureModified, description);
                 wpAPODdraw.SetTitle(graphic, pictureModified, descriptionRect, title, description);
-                pictureModified.Save(picturePathModified, ImageFormat.Png);
+                pictureModified.Save(picturePathModified, ImageFormat.Png);                
             }            
-            pictureModified.Dispose(); // Dispose the pictureModified object
+            pictureModified.Dispose(); // Dispose the pictureModified object            
             _ = SystemParametersInfo(0x14, 0, picturePathModified, 0x01 | 0x02);
-            return Task.CompletedTask;
+            await Task.CompletedTask;
         }
         // Create config file with title of the picture on txt file for checking, if the current wallpaper is the same on the web before downloading. This method will also create lnk shortcut on the local Startup folder
         private async Task CreateConfig()
@@ -105,9 +113,9 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             }
         }
         // This method asynchronously creates a shortcut of the WallpaperAPOD application in the Windows Startup folder by invoking the CreateShortcut method of the WallpaperAPODshortcut class.
-        private async Task CreateOnStartupShortcut()
+        private static async Task CreateOnStartupShortcut()
         {
-             await Task.Run(WallpaperAPODshortcut.CreateShortcut);
+            await Task.Run(WallpaperAPODshortcut.CreateShortcut);             
         }
         // Clear caches in the local app folder
         public static void ClearCache()

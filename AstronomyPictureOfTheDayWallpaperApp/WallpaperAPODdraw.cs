@@ -27,7 +27,7 @@
             SizeF textSize = graphic.MeasureString(title, titleFont, (int)descriptionRect.Width);
             while (textSize.Height > titleRect.Height && titleFontSize > 1)
             {
-                titleFontSize = titleFontSize - 2;
+                titleFontSize -= 2;
                 titleFont = new Font("Gill Sans Nova", titleFontSize, FontStyle.Bold);
                 textSize = graphic.MeasureString(description, titleFont, (int)titleRect.Width);
             }
@@ -38,9 +38,10 @@
             RectangleF shadowRect = new(titleRect.X + shadowOffset, titleRect.Y + shadowOffset, titleRect.Width, titleRect.Height);
             graphic.DrawString(title, titleFont, shadowBrush, shadowRect, titleFormat); // draw title shadow
             graphic.DrawString(title, titleFont, textColor, titleRect, titleFormat); // draw title                      
+
         }
         // Set description in image and size is by width and heigh of the image
-        public RectangleF SetDescription(Graphics graphic, Image pictureModified, string description)
+        public Task<RectangleF> SetDescription(Graphics graphic, Image pictureModified, string description)
         {
             int descriptionPadding = (int)(0.03 * pictureModified.Width);
             float descriptionHeightRatio = Math.Max(Math.Min(pictureModified.Height * 0.0005f, maxDescriptionHeightRatio), minDescriptionHeightRatio);
@@ -58,14 +59,14 @@
             SizeF textSize = graphic.MeasureString(description, descriptionFont, (int)descriptionRect.Width);
             while (textSize.Height > descriptionRect.Height && descriptionFontSize > 1)
             {
-                descriptionFontSize = descriptionFontSize - 2;
+                descriptionFontSize -= 2;
                 descriptionFont = new Font("Gill Sans Nova", descriptionFontSize, FontStyle.Regular);
                 textSize = graphic.MeasureString(description, descriptionFont, (int)descriptionRect.Width);
             }
             textColor = new SolidBrush(Color.White);
             StringFormat descriptionFormat = new() { Alignment = StringAlignment.Far };
-            graphic.DrawString(description, descriptionFont, textColor, descriptionRect, descriptionFormat); // Draw the text using the calculated font size
-            return descriptionRect;
+            graphic.DrawString(description, descriptionFont, textColor, descriptionRect, descriptionFormat); // Draw the text using the calculated font size            
+            return Task.FromResult(descriptionRect);            
         }
     }
 }
