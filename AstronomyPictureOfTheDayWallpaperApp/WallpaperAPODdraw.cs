@@ -38,7 +38,6 @@
             RectangleF shadowRect = new(titleRect.X + shadowOffset, titleRect.Y + shadowOffset, titleRect.Width, titleRect.Height);
             graphic.DrawString(title, titleFont, shadowBrush, shadowRect, titleFormat); // draw title shadow
             graphic.DrawString(title, titleFont, textColor, titleRect, titleFormat); // draw title                      
-
         }
         // Set description in image and size is by width and heigh of the image
         public Task<RectangleF> SetDescription(Graphics graphic, Image pictureModified, string description)

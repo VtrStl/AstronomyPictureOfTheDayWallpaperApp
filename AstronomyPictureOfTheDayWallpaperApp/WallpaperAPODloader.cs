@@ -14,7 +14,6 @@ namespace AstronomyPictureOfTheDayWallpaperApp
         private readonly string url = "https://api.nasa.gov/planetary/apod?api_key=";
         public static string configPath = Path.Combine(Application.LocalUserAppDataPath, "config.txt");
         private string apiPath = Path.Combine(Application.StartupPath,"..", "..", "..", "apikey.txt"); // Need change path before release
-        private string json = string.Empty;
         private string pictureURL = string.Empty;
         private string title = string.Empty;
         private string description = string.Empty;
@@ -22,13 +21,12 @@ namespace AstronomyPictureOfTheDayWallpaperApp
         private string pictureFolder = string.Empty;
         private string picturePathDefault = string.Empty;
         private string picturePathModified = string.Empty;
-        // Dynamic variable
-        private dynamic? results;
         // Image related variables   
         private Image? pictureModified;
         // Class variable
         private Form1 form;
-        
+        private ApodData? results;
+
         // Loading methods from Form class      
         public WallpaperAPODloader(Form1 _form)
         {
@@ -38,34 +36,40 @@ namespace AstronomyPictureOfTheDayWallpaperApp
         // Validation for WallpaperAPODruntime for stopping _checkTimer
         public bool IsMediaTypeVideo() 
         {
-            return results.media_type == "video";         
+            return results != null && results.media_type == "video";
         }
         
         // Load the current picture and title from the site https://apod.nasa.gov/apod/ and all the important things that will be used in another methods
         public async Task LoadPicture()
-        {
+        {            
             string api = File.ReadAllText(apiPath);
             using (HttpClient client = new())
             {
-                json = await client.GetStringAsync(url + api);
+                string json = await client.GetStringAsync(url + api).ConfigureAwait(false);
+                results = JsonConvert.DeserializeObject<ApodData>(json);
+            }                
+            if (results != null && !string.IsNullOrEmpty(results.title) && !string.IsNullOrEmpty(results.media_type)) // Because I still got RuntimeBinderException in this lines, so I added this boilerplate checking line, it little improve RAM usage
+            { 
+                if (results.title != null && results.media_type != null) 
+                { 
+                    title = results.title;
+                    mediaType = results.media_type;
+                } 
             }
-            results = JsonConvert.DeserializeObject<dynamic>(json);            
-            title = results.title;
-            mediaType = results.media_type;
             if ((!File.Exists(configPath) && mediaType != "video" ||                                       // Check if config file doesnt exist
                 (File.Exists(configPath) && File.ReadAllText(configPath) != title && !IsMediaTypeVideo()))) // OR it exists with different title AND if the mediatype is not "video"
             {
-                await DownloadPicture(results);
+                if (results != null) { await DownloadPicture(results); }
             }
-            if (IsMediaTypeVideo()) 
-            {  
+            if (IsMediaTypeVideo())
+            {
                 form.ShowBaloonTipVideo();
                 await CreateConfig().ConfigureAwait(false);
-                await CreateOnStartupShortcut().ConfigureAwait(false);
-            }
+                await CreateOnStartupShortcut().ConfigureAwait(false);                
+            }            
         }
         // Download the Picture when every condition is correct
-        private async Task DownloadPicture(dynamic results)
+        private async Task DownloadPicture(ApodData results)
         {            
             description = results.explanation;
             pictureFolder = Path.Combine(Application.LocalUserAppDataPath, "img");
@@ -79,43 +83,42 @@ namespace AstronomyPictureOfTheDayWallpaperApp
                 {
                     using (Stream streamToWriteTo = File.Open(picturePathDefault, FileMode.Create))
                     {
-                        await streamToReadFrom.CopyToAsync(streamToWriteTo, 65536); // Maybe need modify buffer size later, now thisis ideal size of 64kb.
+                        await streamToReadFrom.CopyToAsync(streamToWriteTo, 48 * 1024).ConfigureAwait(false); // Maybe need modify buffer size later, now thisis ideal size of 64kb.
                     }
                 }
             }
-            await CreateConfig(); // It create config txt file with of title name that was get from API for checking if the wallpaper is already downloaded                        
-            await SetWallpaper();
-            await CreateOnStartupShortcut();
+            await CreateConfig().ConfigureAwait(false); // It create config txt file with of title name that was get from API for checking if the wallpaper is already downloaded                        
+            await SetWallpaper().ConfigureAwait(false);
+            await CreateOnStartupShortcut().ConfigureAwait(false);
         }
         // Download and set the current picture as wallpaper
         private async Task SetWallpaper()
         {
             WallpaperAPODdraw wpAPODdraw = new();
-            picturePathModified = Path.Combine(pictureFolder, "APODmodified.png");           
-            pictureModified = Image.FromFile(picturePathDefault);            
+            picturePathModified = Path.Combine(pictureFolder, "APODmodified.png");
+            pictureModified = Image.FromFile(picturePathDefault);
             using (Graphics graphic = Graphics.FromImage(pictureModified))
             {
                 RectangleF descriptionRect = await wpAPODdraw.SetDescription(graphic, pictureModified, description);
-                wpAPODdraw.SetTitle(graphic, pictureModified, descriptionRect, title, description);
-                pictureModified.Save(picturePathModified, ImageFormat.Png);                
-            }            
-            pictureModified.Dispose(); // Dispose the pictureModified object            
+                await Task.Run(() => wpAPODdraw.SetTitle(graphic, pictureModified, descriptionRect, title, description));
+                pictureModified.Save(picturePathModified, ImageFormat.Png);
+            }
+            pictureModified.Dispose(); // Dispose the pictureModified object
             _ = SystemParametersInfo(0x14, 0, picturePathModified, 0x01 | 0x02);
-            await Task.CompletedTask;
         }
         // Create config file with title of the picture on txt file for checking, if the current wallpaper is the same on the web before downloading. This method will also create lnk shortcut on the local Startup folder
         private async Task CreateConfig()
         {
             using (var fileStream = new FileStream(configPath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 4096, useAsync: true))
             {
-                await fileStream.WriteAsync(Encoding.UTF8.GetBytes(title));
-                await fileStream.FlushAsync();
+                await fileStream.WriteAsync(Encoding.UTF8.GetBytes(title)).ConfigureAwait(false);
+                await fileStream.FlushAsync().ConfigureAwait(false);
             }
         }
         // This method asynchronously creates a shortcut of the WallpaperAPOD application in the Windows Startup folder by invoking the CreateShortcut method of the WallpaperAPODshortcut class.
         private static async Task CreateOnStartupShortcut()
         {
-            await Task.Run(WallpaperAPODshortcut.CreateShortcut);             
+            await Task.Run(WallpaperAPODshortcut.CreateShortcut).ConfigureAwait(false);             
         }
         // Clear caches in the local app folder
         public static void ClearCache()
@@ -137,5 +140,14 @@ namespace AstronomyPictureOfTheDayWallpaperApp
                 sw.WriteLine($"Error occurred at {DateTime.Now}:\n{ex.Message}\n{ex.StackTrace}");
             }
         }
+    }
+    
+    // Class for binding data from API, dynamic variable causes RuntimeBinderException
+    public class ApodData
+    {
+        public string title { get; set; } = "";
+        public string explanation { get; set; } = "";
+        public string hdurl { get; set; } = "";
+        public string media_type { get; set; } = "";        
     }
 }

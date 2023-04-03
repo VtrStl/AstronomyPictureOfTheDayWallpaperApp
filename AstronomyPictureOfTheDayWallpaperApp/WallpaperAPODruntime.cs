@@ -10,7 +10,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
         private System.Timers.Timer? _checkTimer;
         private System.Timers.Timer? _oneTimeTimer;
         private TimeSpan TimeToUtc { get; set; }
-
+        
         public WallpaperAPODruntime(WallpaperAPODloader _wpAPODloader, Form1 _form)
         {
             wpAPODloader = _wpAPODloader;
@@ -27,7 +27,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             // Set up endless timer to check for new photo every 60 minutes
             _checkTimer = new System.Timers.Timer();
             _checkTimer.Interval = 60 * 60 * 1000;
-            _checkTimer.Elapsed += async (sender, e) => await CheckForNewPhoto(_checkTimer);
+            _checkTimer.Elapsed += async (sender, e) => await CheckForNewPhoto(_checkTimer).ConfigureAwait(false);
             _checkTimer.Start();
             
             // Get the next 5am am in UTC time 
@@ -40,14 +40,14 @@ namespace AstronomyPictureOfTheDayWallpaperApp
                 TimeToUtc = GetNextUtcFiveAm().Subtract(DateTime.UtcNow);
             }                                            
             _dailytimer.Interval = Math.Max(TimeToUtc.TotalMilliseconds, 1); // Set up the timer to update the wallpaper when the time elapses   
-            _dailytimer.Elapsed += async (sender, e) => await UpdateWallpaperAndRestartDailyTimer(_dailytimer, _checkTimer);
+            _dailytimer.Elapsed += async (sender, e) => await UpdateWallpaperAndRestartDailyTimer(_dailytimer, _checkTimer).ConfigureAwait(false);
             _dailytimer.Start();
 
             // Set up one-time timer to check for new photo after 1 minute after program started on background
             _oneTimeTimer = new System.Timers.Timer();
             _oneTimeTimer.AutoReset = false;
             _oneTimeTimer.Interval = 1 * 60 * 1000;
-            _oneTimeTimer.Elapsed += async (sender, e) => await CheckForNewPhoto(_checkTimer);
+            _oneTimeTimer.Elapsed += async (sender, e) => await CheckForNewPhoto(_checkTimer).ConfigureAwait(false);
             _oneTimeTimer.Start();
             await Task.Delay(TimeToUtc);  // Wait for the timer to elapse           
         }
@@ -60,7 +60,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             {
                 try
                 {
-                    await wpAPODloader.LoadPicture();
+                    await wpAPODloader.LoadPicture().ConfigureAwait(false);
                     if (wpAPODloader.IsMediaTypeVideo())
                     {
                         _checkTimer.Stop(); // Stop the timer if the media type is video
@@ -133,14 +133,17 @@ namespace AstronomyPictureOfTheDayWallpaperApp
         // Stop the timers when user click on "Deactive"       
         public void StopTimers()
         {
-            if (_dailytimer != null && _checkTimer != null || _oneTimeTimer != null)
+            if (_dailytimer != null && _checkTimer != null)
             {
                 _dailytimer.Stop();
                 _dailytimer.Dispose();
                 _checkTimer.Stop();
                 _checkTimer.Dispose();
-                _oneTimeTimer.Stop();
-                _oneTimeTimer.Dispose();
+                if (_oneTimeTimer != null)
+                {
+                    _oneTimeTimer.Stop();
+                    _oneTimeTimer.Dispose();
+                }
             }
         }
         // Stop the timers when current media type on APOD web is video.
