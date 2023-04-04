@@ -36,8 +36,8 @@
             StringFormat titleFormat = new() { Alignment = StringAlignment.Far };
             float shadowOffset = pictureModified.Height * 0.002f;
             RectangleF shadowRect = new(titleRect.X + shadowOffset, titleRect.Y + shadowOffset, titleRect.Width, titleRect.Height);
-            graphic.DrawString(title, titleFont, shadowBrush, shadowRect, titleFormat); // draw title shadow
-            graphic.DrawString(title, titleFont, textColor, titleRect, titleFormat); // draw title                      
+            graphic.DrawString(title, titleFont, shadowBrush, shadowRect, titleFormat); // Draw title shadow
+            graphic.DrawString(title, titleFont, textColor, titleRect, titleFormat); // Draw title                      
         }
         // Set description in image and size is by width and heigh of the image
         public Task<RectangleF> SetDescription(Graphics graphic, Image pictureModified, string description)

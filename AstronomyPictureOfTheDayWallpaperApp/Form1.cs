@@ -11,8 +11,8 @@ namespace AstronomyPictureOfTheDayWallpaperApp
         {
             InitializeComponent();
             wpAPODloader = new WallpaperAPODloader(this);
-            wallpaperAPODruntime = new WallpaperAPODruntime(wpAPODloader, this);            
-            configExists =  WallpaperAPODruntime.ConfigExists();
+            wallpaperAPODruntime = new WallpaperAPODruntime(wpAPODloader, this);
+            configExists = WallpaperAPODruntime.ConfigExists();
             UpdateTrayIcon(configExists);
         }
         // Set up the notification icon and start the wallpaper APOD manager if a configuration file exists.
@@ -26,9 +26,9 @@ namespace AstronomyPictureOfTheDayWallpaperApp
                 ShowInTaskbar = false;
                 UpdateStatusLabel(true);
                 await wallpaperAPODruntime.StartTimers();
-            }            
+            }
         }
-        // This method restores the window state and sets the form as top-level when the notification icon is double-clicked. Commend: "Restores window state and sets as top-level on notification icon double-click."
+        // This method restores the window state and sets the form as top-level when the notification icon is double-clicked.
         private void NotificationIcon_MouseDoubleClick(object sender, MouseEventArgs e)
         {
             WindowState = FormWindowState.Normal;
@@ -38,7 +38,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
                 TopLevel = true;
             }
         }
-        // Hide form from taskbar when minimized if mouse not on taskbar.
+        // Hide form from taskbar when minimized if mouse not on taskbar
         public void Form1_SizeChanged(object sender, EventArgs e)
         {
             bool MousePointerNotOnTaskBar = Screen.GetWorkingArea(this).Contains(Cursor.Position);
@@ -48,16 +48,24 @@ namespace AstronomyPictureOfTheDayWallpaperApp
                 TopLevel = false;
             }
         }
-        // Updates the status label based on the isActive parameter.
+        // Before the closing, it will ask user if he really want close the app
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (MessageBox.Show("Are you sure you want to close the application and all instances?", "Confirm", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.No)
+            {
+                e.Cancel = true;
+            }
+        }
+        // Updates the status label based on the isActive parameter
         private void UpdateStatusLabel(bool isActive)
         {
             StatusLabel.Text = isActive ? "The application is active" : "The application is not active";
             StatusLabel.ForeColor = isActive ? Color.Green : Color.Red;
         }
-        // Updates the tray icon based on the isActive parameter.
+        // Updates the tray icon based on the isActive parameter
         private void UpdateTrayIcon(bool isActive)
         {
-            string iconFolder = Path.Combine(Application.StartupPath,"..", "..", "..", "Icons"); // Need change path before build to single exe
+            string iconFolder = Path.Combine(Application.StartupPath, "..", "..", "..", "Icons"); // Need change path before build to single exe
             string iconName = isActive ? "APODiconGreen.ico" : "APODicon.ico";
             NotificationIcon.Icon = new Icon(Path.Combine(iconFolder, iconName));
         }
@@ -71,7 +79,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
         {
             NotificationIcon.ShowBalloonTip(10000, "Information", "Today APOD is video format, Wallpaper will not change today and checker timer stopped", ToolTipIcon.Info);
         }
-        
+
         public void ShowErrorMessageBox(Exception ex)
         {
             MessageBox.Show("Unhandled error accure: " + ex.Message + $" \nRestart the app and check {Application.LocalUserAppDataPath} folder for tracetrack. Please restart the app",
@@ -87,22 +95,19 @@ namespace AstronomyPictureOfTheDayWallpaperApp
                 StatusLabel.ForeColor = Color.Black;
                 MessageBox.Show("Activation was successful, please restart the app for proper function");
             }
-            catch (Exception ex) 
-            { 
-                if (ex is WebException webEx)
+            catch (Exception ex)
+            {
+                if (ex is WebException webEx && webEx.Status == WebExceptionStatus.NameResolutionFailure)
                 {
-                    if (webEx.Status == WebExceptionStatus.NameResolutionFailure)
-                    {
-                        MessageBox.Show("There is no internet connection", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        return;
-                    }
+                    MessageBox.Show("There is no internet connection", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
                 }
                 WallpaperAPODloader.CreateExceptionLog(ex);
                 MessageBox.Show("Unhandled error accure: " + ex.Message + " \nRestart the app and check your applocal folder for tracetrack",
-                    "error", MessageBoxButtons.OK, MessageBoxIcon.Error); 
+                    "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
-        // Deactivate the app and remove all traces from app local folder and remove startup lnk file.
+        // Deactivate the app and remove all traces from app local folder and remove startup lnk file
         private async void DeactivateBT_Click(object sender, EventArgs e)
         {
             if (MessageBox.Show("Do you really want to deactivate this app and all processes and clear the cache?", "Warning",
@@ -113,6 +118,6 @@ namespace AstronomyPictureOfTheDayWallpaperApp
                 UpdateTrayIcon(false);
                 await Task.Run(wallpaperAPODruntime.StopTimers);
             }
-        }
+        }        
     }
 }

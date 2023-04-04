@@ -16,7 +16,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             wpAPODloader = _wpAPODloader;
             form = _form;
         }
-        // Check if the config files exists before run the other methods in WallpaperAPODruntime and return True/False.
+        // Check if the config files exists before run the other methods in WallpaperAPODruntime and return True/False
         public static bool ConfigExists()
         {
             return File.Exists(WallpaperAPODloader.configPath);
@@ -34,7 +34,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             DateTime nextUtcFourPm = GetNextUtcFiveAm(); 
             TimeToUtc = nextUtcFourPm.Subtract(DateTime.UtcNow);
             _dailytimer = new System.Timers.Timer();
-            if (TimeToUtc < TimeSpan.Zero) // If the next 4am am in UTC time has already passed, update the wallpaper now
+            if (TimeToUtc < TimeSpan.Zero) // If the next 5:15AM in UTC time has already passed, update the wallpaper now
             {
                 await UpdateWallpaperAndRestartDailyTimer(_dailytimer, _checkTimer);
                 TimeToUtc = GetNextUtcFiveAm().Subtract(DateTime.UtcNow);
@@ -69,6 +69,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
                     {
                         _checkTimer.Stop();
                     }
+                    wpAPODloader.Dispose();
                     retry = false;
                 }
                 catch (WebException webEx)
@@ -116,37 +117,31 @@ namespace AstronomyPictureOfTheDayWallpaperApp
         private static DateTime GetNextUtcFiveAm()
         {
             DateTime utcTime = DateTime.UtcNow;
-            DateTime nextUtcFourPm = new(utcTime.Year, utcTime.Month, utcTime.Day, 5, 15, 0, 0, DateTimeKind.Utc);
-            if (utcTime >= nextUtcFourPm) // If the current time is greater than or equal to the next 5:15 AM UTC time, add 1 day
+            DateTime nextUtcFivePm = new(utcTime.Year, utcTime.Month, utcTime.Day, 5, 15, 0, 0, DateTimeKind.Utc);
+            if (utcTime >= nextUtcFivePm) // If the current time is greater than or equal to the next 5:15 AM UTC time, add 1 day
             {
-                nextUtcFourPm = nextUtcFourPm.AddDays(1);
+                nextUtcFivePm = nextUtcFivePm.AddDays(1);
             }
-            return nextUtcFourPm;
+            return nextUtcFivePm;
         }
-        // Checks if the current UTC time is before 4:15 AM, and returns true if so. Used to deactivate the '_checkertimer'.
+        // Checks if the current UTC time is hour before 5:15 AM, and returns true if so. Used to deactivate the '_checkertimer'
         private static bool IsTimeToStopCheckTimer()
         {
             DateTime utcTime = DateTime.UtcNow;
             DateTime nextUtcFiveAm = GetNextUtcFiveAm();                            
-            return nextUtcFiveAm.Subtract(utcTime) <= TimeSpan.FromHours(1);  // If the time until the next 5:00 AM UTC is less than an hour, stop checking   
+            return nextUtcFiveAm.Subtract(utcTime) <= TimeSpan.FromHours(1);  // If the time until the next 5:15 AM UTC is less than an hour, stop checking   
         }
         // Stop the timers when user click on "Deactive"       
         public void StopTimers()
         {
-            if (_dailytimer != null && _checkTimer != null)
-            {
-                _dailytimer.Stop();
-                _dailytimer.Dispose();
-                _checkTimer.Stop();
-                _checkTimer.Dispose();
-                if (_oneTimeTimer != null)
-                {
-                    _oneTimeTimer.Stop();
-                    _oneTimeTimer.Dispose();
-                }
-            }
+            _dailytimer?.Stop();
+            _dailytimer?.Dispose();
+            _checkTimer?.Stop();
+            _checkTimer?.Dispose();
+            _oneTimeTimer?.Stop();
+            _oneTimeTimer?.Dispose();
         }
-        // Stop the timers when current media type on APOD web is video.
+        // Stop the timers when current media type on APOD web is video
         public void StopCheckTimerForToday()
         {
             _checkTimer?.Stop();

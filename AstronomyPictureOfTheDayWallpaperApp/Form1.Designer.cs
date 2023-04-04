@@ -41,7 +41,7 @@
             // ActivateBT
             // 
             ActivateBT.Anchor = AnchorStyles.Left | AnchorStyles.Right;
-            ActivateBT.Location = new Point(22, 29);
+            ActivateBT.Location = new Point(22, 32);
             ActivateBT.Name = "ActivateBT";
             ActivateBT.Size = new Size(167, 34);
             ActivateBT.TabIndex = 0;
@@ -64,15 +64,15 @@
             tableLayoutPanel1.Name = "tableLayoutPanel1";
             tableLayoutPanel1.RowCount = 3;
             tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Absolute, 56F));
-            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Absolute, 39F));
-            tableLayoutPanel1.Size = new Size(384, 113);
+            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Absolute, 55F));
+            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Absolute, 24F));
+            tableLayoutPanel1.Size = new Size(384, 101);
             tableLayoutPanel1.TabIndex = 1;
             // 
             // DeactivateBT
             // 
             DeactivateBT.Anchor = AnchorStyles.Left | AnchorStyles.Right;
-            DeactivateBT.Location = new Point(195, 29);
+            DeactivateBT.Location = new Point(195, 33);
             DeactivateBT.Name = "DeactivateBT";
             DeactivateBT.Size = new Size(165, 33);
             DeactivateBT.TabIndex = 1;
@@ -87,7 +87,7 @@
             StatusLabel.ForeColor = Color.Red;
             StatusLabel.Location = new Point(22, 0);
             StatusLabel.Name = "StatusLabel";
-            StatusLabel.Size = new Size(338, 18);
+            StatusLabel.Size = new Size(338, 22);
             StatusLabel.TabIndex = 2;
             StatusLabel.Text = "Application is not active";
             StatusLabel.TextAlign = ContentAlignment.BottomCenter;
@@ -103,7 +103,7 @@
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(384, 113);
+            ClientSize = new Size(384, 101);
             Controls.Add(tableLayoutPanel1);
             FormBorderStyle = FormBorderStyle.FixedSingle;
             Icon = (Icon)resources.GetObject("$this.Icon");
@@ -111,6 +111,7 @@
             Name = "Form1";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "APOD Wallpaper Manager";
+            FormClosing += Form1_FormClosing;
             Load += Form1_Load;
             SizeChanged += Form1_SizeChanged;
             tableLayoutPanel1.ResumeLayout(false);
