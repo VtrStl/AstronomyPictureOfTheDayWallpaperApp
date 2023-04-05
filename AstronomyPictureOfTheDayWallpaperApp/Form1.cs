@@ -22,6 +22,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             NotificationIcon.Visible = true;
             if (configExists)
             {
+                ActivateBT.Enabled = false;
                 Visible = false;
                 ShowInTaskbar = false;
                 UpdateStatusLabel(true);
@@ -51,9 +52,12 @@ namespace AstronomyPictureOfTheDayWallpaperApp
         // Before the closing, it will ask user if he really want close the app
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
-            if (MessageBox.Show("Are you sure you want to close the application and all instances?", "Confirm", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.No)
+            if (configExists)
             {
-                e.Cancel = true;
+                if (MessageBox.Show("Are you sure you want to close the application and all instances?", "Confirm", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.No)
+                {
+                    e.Cancel = true;
+                }
             }
         }
         // Updates the status label based on the isActive parameter
@@ -72,7 +76,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
 
         public void ShowBaloonTipRetry()
         {
-            NotificationIcon.ShowBalloonTip(10000, "Warning", "it seems there is no connection to internet, I will retry after 15 minutes", ToolTipIcon.Warning);
+            NotificationIcon.ShowBalloonTip(10000, "Warning", "it seems there is no connection to internet, I will retry after 10 minutes", ToolTipIcon.Warning);
         }
 
         public void ShowBaloonTipVideo()
@@ -82,7 +86,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
 
         public void ShowErrorMessageBox(Exception ex)
         {
-            MessageBox.Show("Unhandled error accure: " + ex.Message + $" \nRestart the app and check {Application.LocalUserAppDataPath} folder for tracetrack. Please restart the app",
+            MessageBox.Show("Unhandled error accure: " + ex.Message + $" \nRestart the app and check {Application.LocalUserAppDataPath} folder for StackTrace.",
                     "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
         // Activate the app and even if media type is video, it will create configFile and lnk shortcun, but after when its done, its needed restart the app 
@@ -108,7 +112,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             }
         }
         // Deactivate the app and remove all traces from app local folder and remove startup lnk file
-        private async void DeactivateBT_Click(object sender, EventArgs e)
+        private void DeactivateBT_Click(object sender, EventArgs e)
         {
             if (MessageBox.Show("Do you really want to deactivate this app and all processes and clear the cache?", "Warning",
                 MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
@@ -116,7 +120,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
                 WallpaperAPODloader.ClearCache();
                 UpdateStatusLabel(false);
                 UpdateTrayIcon(false);
-                await Task.Run(wallpaperAPODruntime.StopTimers);
+                wallpaperAPODruntime.StopTimers();
             }
         }        
     }

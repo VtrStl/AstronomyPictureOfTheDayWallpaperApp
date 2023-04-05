@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using System.Net.Sockets;
 
 namespace AstronomyPictureOfTheDayWallpaperApp
 {
@@ -56,7 +57,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
         {
             int retryCount = 0;
             bool retry = true;
-            while (retry && retryCount < 3) // Loop for trying LoadPicture if there is no internet connection, it will try 3 times after 15 minutes elapsed
+            while (retry && retryCount < 3) // Loop for trying LoadPicture if there is no internet connection, it will try 3 times after 10 minutes elapsed
             {
                 try
                 {
@@ -72,33 +73,30 @@ namespace AstronomyPictureOfTheDayWallpaperApp
                     wpAPODloader.Dispose();
                     retry = false;
                 }
-                catch (WebException webEx)
+                catch (HttpRequestException httpEx) when (httpEx.InnerException is SocketException)
                 {
-                    if (webEx.Status == WebExceptionStatus.NameResolutionFailure)
-                    {
-                        retryCount++;
-                        form.ShowBaloonTipRetry();
-                        await Task.Delay(10 * 60 * 1000);
-                    }
-                    else if (webEx.Response is HttpWebResponse response && response.StatusCode == HttpStatusCode.Forbidden)
-                    {
-                        WallpaperAPODloader.CreateExceptionLog(webEx);
-                        MessageBox.Show($"Error: \n{webEx.Message}\nInvalid API key probably.\nRestart the app and check apikey.txt or traceback", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        retry = false;
-                    }
-                    else
-                    {
-                        WallpaperAPODloader.CreateExceptionLog(webEx);
-                        form.ShowErrorMessageBox(webEx);
-                        retry = false;
-                    }
-                }                
+                    retryCount++;
+                    form.ShowBaloonTipRetry();
+                    await Task.Delay(10 * 60 * 1000);
+                }
+                catch (HttpRequestException httpEx) when (httpEx.Message.Contains("Forbidden"))
+                {
+                    WallpaperAPODloader.CreateExceptionLog(httpEx);
+                    MessageBox.Show($"Error: \n{httpEx.Message}\nInvalid API key probably.\nRestart the app and check {Application.LocalUserAppDataPath} folder for StackTrace", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    retry = false;
+                }
+                catch (HttpRequestException httpEx)
+                {
+                    WallpaperAPODloader.CreateExceptionLog(httpEx);
+                    form.ShowErrorMessageBox(httpEx);
+                    retry = false;
+                }
                 catch (Exception ex)
                 {
                     WallpaperAPODloader.CreateExceptionLog(ex);
                     form.ShowErrorMessageBox(ex);
                     retry = false;
-                }
+                }                
             }
         }
         // Change wallpaper at 5:15AM UTC time 
@@ -117,12 +115,12 @@ namespace AstronomyPictureOfTheDayWallpaperApp
         private static DateTime GetNextUtcFiveAm()
         {
             DateTime utcTime = DateTime.UtcNow;
-            DateTime nextUtcFivePm = new(utcTime.Year, utcTime.Month, utcTime.Day, 5, 15, 0, 0, DateTimeKind.Utc);
-            if (utcTime >= nextUtcFivePm) // If the current time is greater than or equal to the next 5:15 AM UTC time, add 1 day
+            DateTime nextUtcFiveAm = new(utcTime.Year, utcTime.Month, utcTime.Day, 5, 15, 0, 0, DateTimeKind.Utc);
+            if (utcTime >= nextUtcFiveAm) // If the current time is greater than or equal to the next 5:15 AM UTC time, add 1 day
             {
-                nextUtcFivePm = nextUtcFivePm.AddDays(1);
+                nextUtcFiveAm = nextUtcFiveAm.AddDays(1);
             }
-            return nextUtcFivePm;
+            return nextUtcFiveAm;
         }
         // Checks if the current UTC time is hour before 5:15 AM, and returns true if so. Used to deactivate the '_checkertimer'
         private static bool IsTimeToStopCheckTimer()

@@ -128,7 +128,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
         public static void CreateExceptionLog(Exception ex)
         {
             string timeStamp = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss-fff");
-            string filePath = Path.Combine(Application.LocalUserAppDataPath, $"Traceback_{timeStamp}.txt");
+            string filePath = Path.Combine(Application.LocalUserAppDataPath, $"StackTrace_{timeStamp}.txt");
             using (StreamWriter sw = new(filePath))
             {
                 sw.WriteLine($"Error occurred at {DateTime.Now}:\n{ex.Message}\n{ex.StackTrace}");
