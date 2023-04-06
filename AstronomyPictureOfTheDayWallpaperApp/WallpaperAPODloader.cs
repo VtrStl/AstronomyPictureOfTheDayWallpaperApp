@@ -3,6 +3,8 @@ using System.Text;
 using System.Runtime.InteropServices;
 using Newtonsoft.Json;
 using System.Drawing.Imaging;
+using Microsoft.Win32;
+using System.Drawing.Text;
 
 namespace AstronomyPictureOfTheDayWallpaperApp
 {
@@ -13,7 +15,10 @@ namespace AstronomyPictureOfTheDayWallpaperApp
         // Define named constants for SystemParametersInfo flags
         private const int SPI_SETDESKWALLPAPER = 0x14;
         private const int SPIF_UPDATEINIFILE = 0x01;
-        private const int SPIF_SENDCHANGE = 0x02;
+        private const int SPIF_SENDWININICHANGE = 0x02;
+        // Define named constants for Registry to set Wallpaper Style
+        const string NO_TILE = "0";
+        const string STYLE_FIT = "6";
         // String variables
         public static string configPath = Path.Combine(Application.LocalUserAppDataPath, "config.txt");
         private string pictureFolder = string.Empty;
@@ -93,13 +98,24 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             pictureModified = Image.FromFile(picturePathDefault);
             using (Graphics graphic = Graphics.FromImage(pictureModified))
             {
-                RectangleF descriptionRect = await wpAPODdraw.SetDescription(graphic, pictureModified, results.explanation);
-                await Task.Run(() => wpAPODdraw.SetTitle(graphic, pictureModified, descriptionRect, results.title, results.explanation));
+                string fontPath = Path.Combine(Application.StartupPath, "..", "..", "..", "Fonts"); // Need change path before release
+                PrivateFontCollection fontCollection = new PrivateFontCollection();
+                DirectoryInfo fontsDir = new DirectoryInfo(fontPath);
+                foreach (FileInfo fontFile in fontsDir.GetFiles("*.ttf"))
+                {
+                    fontCollection.AddFontFile(fontFile.FullName);
+                }
+                RectangleF descriptionRect = await wpAPODdraw.SetDescription(graphic, pictureModified, results.explanation, fontCollection);
+                await Task.Run(() => wpAPODdraw.SetTitle(graphic, pictureModified, descriptionRect, results.title, results.explanation, fontCollection));
                 pictureModified.Save(picturePathModified, ImageFormat.Png);
             }
             pictureModified.Dispose(); // Dispose the pictureModified object            
-            SystemParametersInfo(SPI_SETDESKWALLPAPER, 0, picturePathModified, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE); // Set the modified picture as wallpaper
+            RegistryKey? key = Registry.CurrentUser.OpenSubKey(@"Control Panel\Desktop", true);
+            key?.SetValue(@"WallpaperStyle", STYLE_FIT);
+            key?.SetValue(@"TileWallpaper", NO_TILE);
+            SystemParametersInfo(SPI_SETDESKWALLPAPER, 0, picturePathModified, SPIF_UPDATEINIFILE | SPIF_SENDWININICHANGE); // Set the modified picture as wallpaper
         }
+        
         // Create config file with title of the picture on txt file for checking, if the current wallpaper is the same on the web before downloading. This method will also create lnk shortcut on the local Startup folder
         private async Task CreateConfig(ApodData results)
         {
