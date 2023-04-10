@@ -5,6 +5,8 @@ using Newtonsoft.Json;
 using System.Drawing.Imaging;
 using Microsoft.Win32;
 using System.Drawing.Text;
+using ImageProcessor.Imaging.Formats;
+using ImageProcessor;
 
 namespace AstronomyPictureOfTheDayWallpaperApp
 {
@@ -29,13 +31,13 @@ namespace AstronomyPictureOfTheDayWallpaperApp
         // Image related variables   
         private Image? pictureModified;
         // Class variable
-        private Form1 form;
+        private WallpaperAPODmanager wpAPODmanager;
         private ApodData? results;
 
         // Loading methods from Form class      
-        public WallpaperAPODloader(Form1 _form)
+        public WallpaperAPODloader(WallpaperAPODmanager wpAPODmanager)
         {
-            form = _form;
+            this.wpAPODmanager = wpAPODmanager;
         }
 
         // Validation for WallpaperAPODruntime for stopping _checkTimer
@@ -63,7 +65,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             }
             if (IsMediaTypeVideo())
             {
-                form.ShowBaloonTipVideo();
+                wpAPODmanager.ShowBaloonTipVideo();
                 CreateOnStartupShortcut();
                 if (results is not null)
                     await CreateConfig(results).ConfigureAwait(false);
@@ -94,7 +96,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
         private async Task SetWallpaper(ApodData results)
         {
             WallpaperAPODdraw wpAPODdraw = new();
-            picturePathModified = Path.Combine(pictureFolder, "APODmodified.png");
+            picturePathModified = Path.Combine(pictureFolder, "APODmodified.jpg");
             pictureModified = Image.FromFile(picturePathDefault);
             using (Graphics graphic = Graphics.FromImage(pictureModified))
             {
@@ -107,7 +109,13 @@ namespace AstronomyPictureOfTheDayWallpaperApp
                 }
                 RectangleF descriptionRect = await wpAPODdraw.SetDescription(graphic, pictureModified, results.explanation, fontCollection);
                 await Task.Run(() => wpAPODdraw.SetTitle(graphic, pictureModified, descriptionRect, results.title, results.explanation, fontCollection));
-                pictureModified.Save(picturePathModified, ImageFormat.Png);
+                using (var imageFactory = new ImageFactory(preserveExifData: true))
+                {
+                    var jpegFormat = new JpegFormat { Quality = 100 };
+                    imageFactory.Load(pictureModified) // Load the modified image from PictureModified
+                                .Format(jpegFormat) // Set the output format to JPEG with lossless compression
+                                .Save(picturePathModified); // Save the modified image to picturePathModified
+                }
             }
             pictureModified.Dispose(); // Dispose the pictureModified object            
             RegistryKey? key = Registry.CurrentUser.OpenSubKey(@"Control Panel\Desktop", true);
@@ -157,7 +165,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             {
                 if (disposing)
                 {
-                    results = null;                    
+                    results = null;
                     pictureFolder = "";
                     picturePathDefault = "";
                     picturePathModified = "";

@@ -1,6 +1,6 @@
 ﻿namespace AstronomyPictureOfTheDayWallpaperApp
 {
-    partial class Form1
+    partial class MainForm
     {
         /// <summary>
         ///  Required designer variable.
@@ -28,13 +28,11 @@
         /// </summary>
         private void InitializeComponent()
         {
-            components = new System.ComponentModel.Container();
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             ActivateBT = new Button();
             tableLayoutPanel1 = new TableLayoutPanel();
             DeactivateBT = new Button();
             StatusLabel = new Label();
-            NotificationIcon = new NotifyIcon(components);
             tableLayoutPanel1.SuspendLayout();
             SuspendLayout();
             // 
@@ -92,13 +90,6 @@
             StatusLabel.Text = "Application is not active";
             StatusLabel.TextAlign = ContentAlignment.BottomCenter;
             // 
-            // NotificationIcon
-            // 
-            NotificationIcon.Icon = (Icon)resources.GetObject("NotificationIcon.Icon");
-            NotificationIcon.Text = "APOD wallpaper manager";
-            NotificationIcon.Visible = true;
-            NotificationIcon.MouseDoubleClick += NotificationIcon_MouseDoubleClick;
-            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -123,7 +114,6 @@
         private Button ActivateBT;
         private TableLayoutPanel tableLayoutPanel1;
         private Button DeactivateBT;
-        private NotifyIcon NotificationIcon;
         private Label StatusLabel;
     }
 }

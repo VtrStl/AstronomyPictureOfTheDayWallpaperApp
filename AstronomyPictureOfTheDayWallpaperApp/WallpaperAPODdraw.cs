@@ -4,7 +4,6 @@ namespace AstronomyPictureOfTheDayWallpaperApp
 {
     public class WallpaperAPODdraw
     {
-        private Brush? textColor;
         const float minTitleHeightRatio = 0.13f;
         const float maxTitleHeightRatio = 0.25f; // Change text height from bottom
         const float minDescriptionHeightRatio = 0.06f;
@@ -75,7 +74,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
                 descriptionRect.Height
             );
             graphic.DrawString(description, descriptionFont, shadowBrush, shadowRect, shadowFormat);
-            textColor = new SolidBrush(Color.White);
+            Brush textColor = new SolidBrush(Color.White);
             StringFormat descriptionFormat = new() { Alignment = StringAlignment.Far };
             graphic.DrawString(description, descriptionFont, textColor, descriptionRect, descriptionFormat); // Draw the text using the calculated font size            
             return Task.FromResult(descriptionRect);

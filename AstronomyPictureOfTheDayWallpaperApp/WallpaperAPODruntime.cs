@@ -6,22 +6,17 @@ namespace AstronomyPictureOfTheDayWallpaperApp
     public class WallpaperAPODruntime
     {
         private WallpaperAPODloader wpAPODloader;
-        private Form1 form;
+        private WallpaperAPODmanager form;
         private System.Timers.Timer? _dailytimer;
         private System.Timers.Timer? _checkTimer;
         private System.Timers.Timer? _oneTimeTimer;
         private TimeSpan TimeToUtc { get; set; }
         
-        public WallpaperAPODruntime(WallpaperAPODloader _wpAPODloader, Form1 _form)
+        public WallpaperAPODruntime(WallpaperAPODloader wpAPODloader, WallpaperAPODmanager _form)
         {
-            wpAPODloader = _wpAPODloader;
+            this.wpAPODloader = wpAPODloader;
             form = _form;
-        }
-        // Check if the config files exists before run the other methods in WallpaperAPODruntime and return True/False
-        public static bool ConfigExists()
-        {
-            return File.Exists(WallpaperAPODloader.configPath);
-        }
+        }        
         // Start the timer when config files exists and app is activated state
         public async Task StartTimers()
         {
@@ -88,13 +83,13 @@ namespace AstronomyPictureOfTheDayWallpaperApp
                 catch (HttpRequestException httpEx)
                 {
                     WallpaperAPODloader.CreateExceptionLog(httpEx);
-                    form.ShowErrorMessageBox(httpEx);
+                    WallpaperAPODmanager.ShowErrorMessageBox(httpEx);
                     retry = false;
                 }
                 catch (Exception ex)
                 {
                     WallpaperAPODloader.CreateExceptionLog(ex);
-                    form.ShowErrorMessageBox(ex);
+                    WallpaperAPODmanager.ShowErrorMessageBox(ex);
                     retry = false;
                 }                
             }
