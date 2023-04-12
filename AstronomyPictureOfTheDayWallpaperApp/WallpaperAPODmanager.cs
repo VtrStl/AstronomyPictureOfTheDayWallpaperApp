@@ -14,7 +14,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
         private MainForm? form;
         private bool configExists;
         private NotifyIcon notificationIcon;
-        private ToolStripMenuItem exitMenuItem;
+        private bool disposedValue;
 
         public WallpaperAPODmanager(NotifyIcon notificationIcon)
         {
@@ -23,35 +23,33 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             wallpaperAPODruntime = new WallpaperAPODruntime(wpAPODloader, this);
             configExists = ConfigExists();
             this.notificationIcon = notificationIcon;
-            // Create ContextMenu for Tray Icon
-            ContextMenuStrip menu = new ContextMenuStrip();
-            exitMenuItem = new ToolStripMenuItem("Exit");
-            menu.Items.Add(exitMenuItem);
-            notificationIcon.ContextMenuStrip = menu;
             // Mouse EventArgs and set Tray Icon by status
             notificationIcon.MouseDoubleClick += NotificationIcon_MouseDoubleClick;
-            exitMenuItem.Click += ExitMenuItem_Click;
             UpdateTrayIcon(configExists);
         }
-
+        
         private void NotificationIcon_MouseDoubleClick(object? sender, MouseEventArgs e)
         {
-            if (form == null || form.IsDisposed)
+            try
             {
-                form = new MainForm(this, ConfigExists());
-            }
-            else
-            {
-                form.WindowState = FormWindowState.Normal;
-            }
-            form.ShowInTaskbar = true;
-            form.Show();
-            form.Focus();
-        }
 
-        private void ExitMenuItem_Click(object? sender, EventArgs e)
-        {
-            Application.ExitThread();
+                if (form is null || form.IsDisposed)
+                {
+                    form = new MainForm(this, ConfigExists());
+                }
+                else
+                {
+                    form.WindowState = FormWindowState.Normal;
+                }
+                form.ShowInTaskbar = true;
+                form.Show();
+                form.Focus();
+            }
+            catch (Exception ex)
+            {
+                WallpaperAPODloader.CreateExceptionLog(ex);
+                ShowErrorMessageBox(ex);
+            }
         }
 
         public static bool ConfigExists()
@@ -94,11 +92,25 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             MessageBox.Show("Unhandled error occurred: " + ex.Message + $" \nRestart the app and check {Application.LocalUserAppDataPath} folder for tracetrack. Please restart the app",
             "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
-
+        
+        // Dispose method with optional disposing parameter.
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    notificationIcon.MouseDoubleClick -= NotificationIcon_MouseDoubleClick;
+                }
+                wpAPODloader?.Dispose();
+                disposedValue = true;
+            }
+        }
+        // Public Dispose method that calls the protected Dispose method with disposing set to true, and suppresses finalization.
         public void Dispose()
         {
-            notificationIcon.MouseDoubleClick -= NotificationIcon_MouseDoubleClick;
-            exitMenuItem.Click -= ExitMenuItem_Click;
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
         }
     }
 }

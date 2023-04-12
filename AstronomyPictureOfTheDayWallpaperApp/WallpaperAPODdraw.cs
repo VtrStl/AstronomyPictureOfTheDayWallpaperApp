@@ -2,13 +2,14 @@
 
 namespace AstronomyPictureOfTheDayWallpaperApp
 {
-    public class WallpaperAPODdraw
+    public class WallpaperAPODdraw : IDisposable
     {
         const float minTitleHeightRatio = 0.13f;
         const float maxTitleHeightRatio = 0.25f; // Change text height from bottom
         const float minDescriptionHeightRatio = 0.06f;
         const float maxDescriptionHeightRatio = 0.155f; // Change text height from bottom
-
+        private bool disposedValue;
+        
         // Set title in image and size is by width and heigh of the image and add shadow
         public void SetTitle(Graphics graphic, Image pictureModified, RectangleF descriptionRect, string title, string description, PrivateFontCollection fontCollection)
         {
@@ -28,7 +29,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             SizeF textSize = graphic.MeasureString(title, titleFont, (int)descriptionRect.Width);
             while (textSize.Height > titleRect.Height && titleFontSize > 1)
             {
-                titleFontSize -= 2;
+                titleFontSize -= 4;
                 titleFont = new Font(fontCollection.Families[1], titleFontSize, FontStyle.Bold);
                 textSize = graphic.MeasureString(description, titleFont, (int)titleRect.Width);
             }
@@ -40,6 +41,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             graphic.DrawString(title, titleFont, shadowBrush, shadowRect, titleFormat); // Draw title shadow
             graphic.DrawString(title, titleFont, textColor, titleRect, titleFormat); // Draw title            
         }
+        
         // Set description in image and size is by width and heigh of the image
         public Task<RectangleF> SetDescription(Graphics graphic, Image pictureModified, string description, PrivateFontCollection fontCollection)
         {
@@ -59,7 +61,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             SizeF textSize = graphic.MeasureString(description, descriptionFont, (int)descriptionRect.Width);
             while (textSize.Height > descriptionRect.Height && descriptionFontSize > 1)
             {
-                descriptionFontSize -= 2;
+                descriptionFontSize -= 4;
                 descriptionFont = new Font(fontCollection.Families[0], descriptionFontSize, FontStyle.Regular);
                 textSize = graphic.MeasureString(description, descriptionFont, (int)descriptionRect.Width);
             }
@@ -78,6 +80,32 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             StringFormat descriptionFormat = new() { Alignment = StringAlignment.Far };
             graphic.DrawString(description, descriptionFont, textColor, descriptionRect, descriptionFormat); // Draw the text using the calculated font size            
             return Task.FromResult(descriptionRect);
+        }
+        
+        // Dispose method with optional disposing parameter.
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+
+                }
+                disposedValue = true;
+            }
+        }
+        
+        // Finalize the WallpaperAPODdraw object
+        ~WallpaperAPODdraw()
+        {
+            Dispose(disposing: false);
+        }
+        
+        // Public Dispose method that calls the protected Dispose method with disposing set to true, and suppresses finalization
+        public void Dispose()
+        {
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
         }
     }
 }

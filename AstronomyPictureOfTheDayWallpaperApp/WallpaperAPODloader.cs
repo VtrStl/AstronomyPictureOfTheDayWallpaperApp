@@ -5,8 +5,6 @@ using Newtonsoft.Json;
 using System.Drawing.Imaging;
 using Microsoft.Win32;
 using System.Drawing.Text;
-using ImageProcessor.Imaging.Formats;
-using ImageProcessor;
 
 namespace AstronomyPictureOfTheDayWallpaperApp
 {
@@ -26,13 +24,15 @@ namespace AstronomyPictureOfTheDayWallpaperApp
         private string pictureFolder = string.Empty;
         private string picturePathDefault = string.Empty;
         private string picturePathModified = string.Empty;
+        private string json = string.Empty;
+        // Image related variables
+        private Image? pictureModified;
         // Bool variable
         private bool disposedValue;
-        // Image related variables   
-        private Image? pictureModified;
         // Class variable
         private WallpaperAPODmanager wpAPODmanager;
         private ApodData? results;
+        
 
         // Loading methods from Form class      
         public WallpaperAPODloader(WallpaperAPODmanager wpAPODmanager)
@@ -54,9 +54,9 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             string api = File.ReadAllText(apiPath);
             using (HttpClient client = new())
             {
-                string json = await client.GetStringAsync(url + api).ConfigureAwait(false);
+                json = await client.GetStringAsync(url + api).ConfigureAwait(false);
                 results = JsonConvert.DeserializeObject<ApodData>(json);
-            }            
+            }
             if (!File.Exists(configPath) && results?.media_type != "video" ||                                       // Check if config file doesnt exist
                 (File.Exists(configPath) && File.ReadAllText(configPath) != results?.title && !IsMediaTypeVideo())) // OR it exists with different title AND if the mediatype is not "video"
             {
@@ -71,6 +71,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
                     await CreateConfig(results).ConfigureAwait(false);
             }
         }
+        
         // Download the Picture when every condition is correct
         private async Task DownloadPicture(ApodData results)
         {
@@ -80,11 +81,13 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             using (HttpClient client = new())
             {
                 using (HttpResponseMessage response = await client.GetAsync(results.hdurl, HttpCompletionOption.ResponseHeadersRead))
-                using (Stream streamToReadFrom = await response.Content.ReadAsStreamAsync())
                 {
-                    using (Stream streamToWriteTo = File.Open(picturePathDefault, FileMode.Create))
+                    using (Stream streamToReadFrom = await response.Content.ReadAsStreamAsync())
                     {
+                        using (Stream streamToWriteTo = File.Open(picturePathDefault, FileMode.Create))
+                        {
                         await streamToReadFrom.CopyToAsync(streamToWriteTo, 48 * 1024).ConfigureAwait(false); // Maybe need modify buffer size later, now thisis ideal size of 48kb
+                        }
                     }
                 }
             }
@@ -92,6 +95,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             await SetWallpaper(results).ConfigureAwait(false);
             CreateOnStartupShortcut();
         }
+        
         // Download and set the current picture as wallpaper
         private async Task SetWallpaper(ApodData results)
         {
@@ -101,7 +105,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             using (Graphics graphic = Graphics.FromImage(pictureModified))
             {
                 string fontPath = Path.Combine(Application.StartupPath, "..", "..", "..", "Fonts"); // Need change path before release
-                PrivateFontCollection fontCollection = new PrivateFontCollection();
+                PrivateFontCollection fontCollection = new();
                 DirectoryInfo fontsDir = new DirectoryInfo(fontPath);
                 foreach (FileInfo fontFile in fontsDir.GetFiles("*.ttf"))
                 {
@@ -109,15 +113,10 @@ namespace AstronomyPictureOfTheDayWallpaperApp
                 }
                 RectangleF descriptionRect = await wpAPODdraw.SetDescription(graphic, pictureModified, results.explanation, fontCollection);
                 await Task.Run(() => wpAPODdraw.SetTitle(graphic, pictureModified, descriptionRect, results.title, results.explanation, fontCollection));
-                using (var imageFactory = new ImageFactory(preserveExifData: true))
-                {
-                    var jpegFormat = new JpegFormat { Quality = 100 };
-                    imageFactory.Load(pictureModified) // Load the modified image from PictureModified
-                                .Format(jpegFormat) // Set the output format to JPEG with lossless compression
-                                .Save(picturePathModified); // Save the modified image to picturePathModified
-                }
+                pictureModified.Save(picturePathModified, ImageFormat.Jpeg);
             }
             pictureModified.Dispose(); // Dispose the pictureModified object            
+            wpAPODdraw.Dispose(); // Dispose the WallpaperAPODdraw object
             RegistryKey? key = Registry.CurrentUser.OpenSubKey(@"Control Panel\Desktop", true);
             key?.SetValue(@"WallpaperStyle", STYLE_FIT);
             key?.SetValue(@"TileWallpaper", NO_TILE);
@@ -133,11 +132,13 @@ namespace AstronomyPictureOfTheDayWallpaperApp
                 await fileStream.FlushAsync();
             }
         }
+        
         // This method asynchronously creates a shortcut of the WallpaperAPOD application in the Windows Startup folder by invoking the CreateShortcut method of the WallpaperAPODshortcut class
         private static void CreateOnStartupShortcut()
         {
             WallpaperAPODshortcut.CreateShortcut();
         }
+        
         // Clear caches in the local app folder and removes shortcut from Startup folder
         public static void ClearCache()
         {
@@ -148,17 +149,19 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             }
             WallpaperAPODshortcut.DeleteShortcut();
         }
+        
         // If something goes wrong and it's not handled properly, this gonna create StackTrace txt file on app local folder
         public static void CreateExceptionLog(Exception ex)
         {
             string timeStamp = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss-fff");
             string filePath = Path.Combine(Application.LocalUserAppDataPath, $"StackTrace_{timeStamp}.txt");
-            using (StreamWriter sw = new(filePath))
+            using (StreamWriter sw = new(filePath, true))
             {
                 sw.WriteLine($"Error occurred at {DateTime.Now}:\n{ex.Message}\n{ex.StackTrace}");
             }
         }
-
+        
+        // Dispose method with optional disposing parameter.
         protected virtual void Dispose(bool disposing)
         {
             if (!disposedValue)
@@ -166,20 +169,22 @@ namespace AstronomyPictureOfTheDayWallpaperApp
                 if (disposing)
                 {
                     results = null;
-                    pictureFolder = "";
-                    picturePathDefault = "";
-                    picturePathModified = "";
+                    json = string.Empty;
+                    pictureFolder = string.Empty;
+                    picturePathDefault = string.Empty;
+                    picturePathModified = string.Empty;
                 }
                 disposedValue = true;
             }
         }
+        
+        // Public Dispose method that calls the protected Dispose method with disposing set to true, and suppresses finalization.
         public void Dispose()
         {
-            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
             Dispose(disposing: true);
             GC.SuppressFinalize(this);
         }
-    }
+    }    
     
     // Class for binding data from API, dynamic variable causes RuntimeBinderException
     public class ApodData

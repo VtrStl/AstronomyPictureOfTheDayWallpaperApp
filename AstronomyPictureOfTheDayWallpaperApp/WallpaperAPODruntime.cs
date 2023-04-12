@@ -17,6 +17,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             this.wpAPODloader = wpAPODloader;
             form = _form;
         }        
+        
         // Start the timer when config files exists and app is activated state
         public async Task StartTimers()
         {
@@ -47,6 +48,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             _oneTimeTimer.Start();
             await Task.Delay(TimeToUtc);  // Wait for the timer to elapse           
         }
+        
         // Code to check for new photo in APOD goes here. If there is a new photo, update the wallpaper
         private async Task CheckForNewPhoto(System.Timers.Timer _checkTimer)
         {
@@ -65,6 +67,8 @@ namespace AstronomyPictureOfTheDayWallpaperApp
                     {
                         _checkTimer.Stop();
                     }
+                    _oneTimeTimer?.Stop();
+                    _oneTimeTimer?.Dispose();
                     wpAPODloader.Dispose();
                     retry = false;
                 }
@@ -94,6 +98,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
                 }                
             }
         }
+        
         // Change wallpaper at 5:15AM UTC time 
         private async Task UpdateWallpaperAndRestartDailyTimer(System.Timers.Timer _dailytimer, System.Timers.Timer _checkTimer)
         {
@@ -106,6 +111,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             TimeToUtc = nextUTCtime.Subtract(DateTime.UtcNow);
             _dailytimer.Interval = Math.Max(TimeToUtc.TotalMilliseconds, 1);           
         }
+        
         // Get and set the UTC time and set another day
         private static DateTime GetNextUtcFiveAm()
         {
@@ -117,6 +123,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             }
             return nextUtcFiveAm;
         }
+        
         // Checks if the current UTC time is hour before 5:15 AM, and returns true if so. Used to deactivate the '_checkertimer'
         private static bool IsTimeToStopCheckTimer()
         {
@@ -124,6 +131,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             DateTime nextUtcFiveAm = GetNextUtcFiveAm();                            
             return nextUtcFiveAm.Subtract(utcTime) <= TimeSpan.FromHours(1);  // If the time until the next 5:15 AM UTC is less than an hour, stop checking   
         }
+        
         // Stop the timers when user click on "Deactive"       
         public void StopTimers()
         {
@@ -134,6 +142,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             _oneTimeTimer?.Stop();
             _oneTimeTimer?.Dispose();
         }
+        
         // Stop the timers when current media type on APOD web is video
         public void StopCheckTimerForToday()
         {

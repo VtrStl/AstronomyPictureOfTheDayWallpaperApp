@@ -16,6 +16,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             this.wpAPODmanager = wpAPODmanager;
             this.configExists = configExists;
         }
+        
         // Set up the notification icon and start the wallpaper APOD manager if a configuration file exists.
         private void Form1_Load(object sender, EventArgs e)
         {
@@ -25,6 +26,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
                 wpAPODmanager.UpdateTrayIcon(true);
             }
         }
+        
         // Hide form from taskbar when minimized if mouse not on taskbar
         public void Form1_SizeChanged(object sender, EventArgs e)
         {
@@ -35,6 +37,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
                 Hide();
             }            
         }
+        
         // Before the closing, it will ask user if he really want close the app
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
@@ -48,6 +51,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             }
             Application.ExitThread();
         }
+        
         // Updates the status label based on the isActive parameter
         private void UpdateStatusLabel(bool isActive)
         {
@@ -82,6 +86,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
                     "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+        
         // Deactivate the app and remove all traces from app local folder and remove startup lnk file
         private void DeactivateBT_Click(object sender, EventArgs e)
         {
