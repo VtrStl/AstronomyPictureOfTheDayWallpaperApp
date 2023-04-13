@@ -27,11 +27,16 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             float titleFontSize = maxFontSize;
             Font titleFont = new(fontCollection.Families[1], titleFontSize, FontStyle.Bold);
             SizeF textSize = graphic.MeasureString(title, titleFont, (int)descriptionRect.Width);
+            float step = Math.Max(maxFontSize / 5.0f, 1.0f); // Sets the step size for font size reduction
             while (textSize.Height > titleRect.Height && titleFontSize > 1)
             {
-                titleFontSize -= 4;
+                titleFontSize -= step;
                 titleFont = new Font(fontCollection.Families[1], titleFontSize, FontStyle.Bold);
                 textSize = graphic.MeasureString(description, titleFont, (int)titleRect.Width);
+                if (step > 1.0f) // Gradually reduce step size
+                {
+                    step *= 0.5f;
+                }
             }
             SolidBrush shadowBrush = new(Color.FromArgb(128, Color.Black));
             SolidBrush textColor = new(Color.White);
@@ -59,11 +64,16 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             float descriptionFontSize = maxFontSize;
             Font descriptionFont = new(fontCollection.Families[0], descriptionFontSize, FontStyle.Regular);
             SizeF textSize = graphic.MeasureString(description, descriptionFont, (int)descriptionRect.Width);
+            float step = Math.Max(maxFontSize / 5.0f, 1.0f); // Sets the step size for font size reduction
             while (textSize.Height > descriptionRect.Height && descriptionFontSize > 1)
             {
-                descriptionFontSize -= 4;
+                descriptionFontSize -= step;
                 descriptionFont = new Font(fontCollection.Families[0], descriptionFontSize, FontStyle.Regular);
                 textSize = graphic.MeasureString(description, descriptionFont, (int)descriptionRect.Width);
+                if (step > 1.0f) // Gradually reduce step size
+                {
+                    step *= 0.5f;
+                }
             }
             // Draw shadow
             SolidBrush shadowBrush = new(Color.FromArgb(128, Color.Black));

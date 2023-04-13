@@ -24,6 +24,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             {
                 UpdateStatusLabel(true);
                 wpAPODmanager.UpdateTrayIcon(true);
+                ActivateBT.Enabled = false;
             }
         }
         
@@ -90,6 +91,11 @@ namespace AstronomyPictureOfTheDayWallpaperApp
         // Deactivate the app and remove all traces from app local folder and remove startup lnk file
         private void DeactivateBT_Click(object sender, EventArgs e)
         {
+            if (!configExists)
+            {
+                MessageBox.Show("This application isn't active and doesn't have an existing config files already", "Warning", MessageBoxButtons.OK);
+                return;
+            }
             if (MessageBox.Show("Do you really want to deactivate this app and all processes and clear the cache?", "Warning",
                 MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
             {
@@ -98,6 +104,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
                 wpAPODmanager.UpdateTrayIcon(false);
                 wpAPODruntime = new(wpAPODloader, wpAPODmanager);
                 wpAPODruntime.StopTimers();
+                ActivateBT.Enabled = true;
             }
         }
     }
