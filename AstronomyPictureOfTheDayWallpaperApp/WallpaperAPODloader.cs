@@ -1,5 +1,4 @@
-﻿using System.Net;
-using System.Text;
+﻿using System.Text;
 using System.Runtime.InteropServices;
 using Newtonsoft.Json;
 using System.Drawing.Imaging;
@@ -17,8 +16,8 @@ namespace AstronomyPictureOfTheDayWallpaperApp
         private const int SPIF_UPDATEINIFILE = 0x01;
         private const int SPIF_SENDWININICHANGE = 0x02;
         // Define named constants for Registry to set Wallpaper Style
-        const string NO_TILE = "0";
-        const string STYLE_FIT = "6";
+        private const string NO_TILE = "0";
+        private const string STYLE_FIT = "6";
         // String variables
         public static string configPath = Path.Combine(Application.LocalUserAppDataPath, "config.txt");
         private string pictureFolder = string.Empty;

@@ -1,14 +1,12 @@
-using System.Diagnostics.CodeAnalysis;
-using System.Net;
 using System.Net.Sockets;
 
 namespace AstronomyPictureOfTheDayWallpaperApp
 {
     public partial class MainForm : Form, IDisposable
     {
+        private WallpaperAPODloader? wpAPODloader;
         private WallpaperAPODruntime? wpAPODruntime;
-        private WallpaperAPODmanager wpAPODmanager;
-        WallpaperAPODloader? wpAPODloader;
+        private WallpaperAPODmanager wpAPODmanager;        
         private bool configExists;
         public MainForm(WallpaperAPODmanager wpAPODmanager, bool configExists)
         {
@@ -18,7 +16,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
         }
         
         // Set up the notification icon and start the wallpaper APOD manager if a configuration file exists.
-        private void Form1_Load(object sender, EventArgs e)
+        private void MainForm_Load(object sender, EventArgs e)
         {
             if (configExists)
             {
@@ -29,7 +27,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
         }
         
         // Hide form from taskbar when minimized if mouse not on taskbar
-        public void Form1_SizeChanged(object sender, EventArgs e)
+        public void MainForm_SizeChanged(object sender, EventArgs e)
         {
             bool MousePointerNotOnTaskBar = Screen.GetWorkingArea(this).Contains(Cursor.Position);
             if (WindowState == FormWindowState.Minimized && MousePointerNotOnTaskBar)
@@ -40,7 +38,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
         }
         
         // Before the closing, it will ask user if he really want close the app
-        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
             if (configExists)
             {

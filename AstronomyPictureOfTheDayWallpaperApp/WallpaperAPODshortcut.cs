@@ -2,7 +2,7 @@
 
 namespace AstronomyPictureOfTheDayWallpaperApp
 {
-    public class WallpaperAPODshortcut
+    public static class WallpaperAPODshortcut
     {
         public static void CreateShortcut()
         {
@@ -10,7 +10,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             string shortcutPath = Path.Combine(startupPath, "WallpaperAPOD.lnk");
             if (!System.IO.File.Exists(shortcutPath))
             {
-                WshShellClass shell = new WshShellClass();
+                WshShellClass shell = new();
                 IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(shortcutPath);
                 shortcut.TargetPath = Application.ExecutablePath;
                 shortcut.Save();

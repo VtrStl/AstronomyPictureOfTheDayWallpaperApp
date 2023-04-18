@@ -7,7 +7,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
         const float minTitleHeightRatio = 0.13f;
         const float maxTitleHeightRatio = 0.25f; // Change text height from bottom
         const float minDescriptionHeightRatio = 0.06f;
-        const float maxDescriptionHeightRatio = 0.155f; // Change text height from bottom
+        const float maxDescriptionHeightRatio = 0.15f; // Change text height from bottom
         private bool disposedValue;
         
         // Set title in image and size is by width and heigh of the image and add shadow
@@ -27,13 +27,13 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             float titleFontSize = maxFontSize;
             Font titleFont = new(fontCollection.Families[1], titleFontSize, FontStyle.Bold);
             SizeF textSize = graphic.MeasureString(title, titleFont, (int)descriptionRect.Width);
-            float step = Math.Max(maxFontSize / 5.0f, 1.0f); // Sets the step size for font size reduction
+            float step = Math.Max(maxFontSize / 5.0f, 2.0f); // Sets the step size for font size reduction
             while (textSize.Height > titleRect.Height && titleFontSize > 1)
             {
                 titleFontSize -= step;
                 titleFont = new Font(fontCollection.Families[1], titleFontSize, FontStyle.Bold);
                 textSize = graphic.MeasureString(description, titleFont, (int)titleRect.Width);
-                if (step > 1.0f) // Gradually reduce step size
+                if (step > 2.0f) // Gradually reduce step size
                 {
                     step *= 0.5f;
                 }
@@ -70,7 +70,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
                 descriptionFontSize -= step;
                 descriptionFont = new Font(fontCollection.Families[0], descriptionFontSize, FontStyle.Regular);
                 textSize = graphic.MeasureString(description, descriptionFont, (int)descriptionRect.Width);
-                if (step > 1.0f) // Gradually reduce step size
+                if (step > 2.0f) // Gradually reduce step size
                 {
                     step *= 0.5f;
                 }
