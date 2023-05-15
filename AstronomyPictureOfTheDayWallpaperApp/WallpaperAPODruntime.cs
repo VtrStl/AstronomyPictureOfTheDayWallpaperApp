@@ -1,4 +1,5 @@
 ﻿using System.Net.Sockets;
+using System.Net;
 
 namespace AstronomyPictureOfTheDayWallpaperApp
 {
@@ -68,30 +69,33 @@ namespace AstronomyPictureOfTheDayWallpaperApp
                     }
                     _oneTimeTimer?.Stop();
                     _oneTimeTimer?.Dispose();
-                    wpAPODloader.Dispose();
+                    wpAPODloader.Dispose();                    
                     retry = false;
                 }
-                catch (HttpRequestException httpEx) when (httpEx.InnerException is SocketException)
+                catch (HttpRequestException httpEx) when (httpEx.InnerException is SocketException || (httpEx.StatusCode == HttpStatusCode.GatewayTimeout))
                 {
                     retryCount++;
                     form.ShowBaloonTipRetry();
                     await Task.Delay(10 * 60 * 1000);
                 }
-                catch (HttpRequestException httpEx) when (httpEx.Message.Contains("Forbidden"))
+				catch (HttpRequestException httpEx) when (httpEx.Message.Contains("Forbidden"))
                 {
+                    form.ShowBaloonTipError(httpEx);
                     WallpaperAPODloader.CreateExceptionLog(httpEx);
                     MessageBox.Show($"Error: \n{httpEx.Message}\nInvalid API key probably.\nRestart the app and check {Application.LocalUserAppDataPath} folder for StackTrace", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     retry = false;
                 }
                 catch (HttpRequestException httpEx)
                 {
+                    form.ShowBaloonTipError(httpEx);
                     WallpaperAPODloader.CreateExceptionLog(httpEx);
                     WallpaperAPODmanager.ShowErrorMessageBox(httpEx);
                     retry = false;
                 }
                 catch (Exception ex)
                 {
-                    WallpaperAPODloader.CreateExceptionLog(ex);
+                    form.ShowBaloonTipError(ex);
+                    WallpaperAPODloader.CreateExceptionLog(ex);                    
                     WallpaperAPODmanager.ShowErrorMessageBox(ex);
                     retry = false;
                 }                

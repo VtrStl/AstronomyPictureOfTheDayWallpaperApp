@@ -64,7 +64,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             float descriptionFontSize = maxFontSize;
             Font descriptionFont = new(fontCollection.Families[0], descriptionFontSize, FontStyle.Regular);
             SizeF textSize = graphic.MeasureString(description, descriptionFont, (int)descriptionRect.Width);
-            float step = Math.Max(maxFontSize / 5.0f, 1.0f); // Sets the step size for font size reduction
+            float step = Math.Max(maxFontSize / 5.0f, 2.0f); // Sets the step size for font size reduction
             while (textSize.Height > descriptionRect.Height && descriptionFontSize > 1)
             {
                 descriptionFontSize -= step;

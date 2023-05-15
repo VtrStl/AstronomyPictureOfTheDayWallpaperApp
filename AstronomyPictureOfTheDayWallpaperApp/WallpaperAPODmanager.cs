@@ -25,7 +25,6 @@
         {
             try
             {
-
                 if (form is null || form.IsDisposed)
                 {
                     form = new MainForm(this, ConfigExists());
@@ -40,6 +39,7 @@
             }
             catch (Exception ex)
             {
+                ShowBaloonTipError(ex);
                 WallpaperAPODloader.CreateExceptionLog(ex);
                 ShowErrorMessageBox(ex);
             }
@@ -72,7 +72,12 @@
 
         public void ShowBaloonTipRetry()
         {
-            notificationIcon.ShowBalloonTip(10000, "Warning", "it seems there is no connection to internet, I will retry after 10 minutes", ToolTipIcon.Warning);
+            notificationIcon.ShowBalloonTip(10000, "Warning", "it seems there is no connection to internet or apod site is not avaible, I will retry after 10 minutes", ToolTipIcon.Warning);
+        }
+
+        public void ShowBaloonTipError(Exception ex)
+        {
+            notificationIcon.ShowBalloonTip(10000, "Error", $"Application has an exception : '{ex.Message}.' Restart the app for proper function", ToolTipIcon.Error);
         }
 
         public void ShowBaloonTipVideo()
