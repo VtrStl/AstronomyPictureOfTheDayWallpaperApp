@@ -8,6 +8,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <ApplicationIcon>Icons\APODicon.ico</ApplicationIcon>
     <Copyright>FrosterDune</Copyright>
+	<Version>1.0.2</Version>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -42,6 +43,7 @@
 
   <ItemGroup>
     <Folder Include="Fonts\" />
+    <Folder Include="example\" />
   </ItemGroup>
 
 </Project>
