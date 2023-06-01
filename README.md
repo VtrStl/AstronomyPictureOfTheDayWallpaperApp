@@ -13,11 +13,9 @@ This is a desktop wallpaper app that automatically updates your wallpaper with t
 - Minimal and easy-to-use user interface with only Activate/Deactivate buttons and a coloured tray icon that changes when the app is activated or not.
 
 Here are some examples of modified images that are used as wallpaper. Click any image for better resolution
-<p float="left">
-    <img src="AstronomyPictureOfTheDayWallpaperApp/examples/APODexample1.jpg" width=500/>
-    <img src="AstronomyPictureOfTheDayWallpaperApp/examples/APODexample2.jpg" width=500/>
-    <img src="AstronomyPictureOfTheDayWallpaperApp/examples/APODmodified3.jpg" width=500/>
-</p>
+<img src="AstronomyPictureOfTheDayWallpaperApp/examples/APODexample1.jpg"/>
+<img src="AstronomyPictureOfTheDayWallpaperApp/examples/APODexample2.jpg"/>
+<img src="AstronomyPictureOfTheDayWallpaperApp/examples/APODmodified3.jpg"/>
 
 ## Usage
 1.  Download and install the app from this Github repository, or download latest release version
