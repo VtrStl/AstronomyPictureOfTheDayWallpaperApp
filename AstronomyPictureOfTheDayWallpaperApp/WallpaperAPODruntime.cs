@@ -72,8 +72,8 @@ namespace AstronomyPictureOfTheDayWallpaperApp
                     wpAPODloader.Dispose();                    
                     retry = false;
                 }
-                catch (HttpRequestException httpEx) when (httpEx.InnerException is SocketException
-                || (httpEx.StatusCode == HttpStatusCode.GatewayTimeout) || (httpEx.StatusCode == HttpStatusCode.BadGateway))
+                catch (HttpRequestException httpEx) when ((httpEx.InnerException is SocketException)
+                || (httpEx.StatusCode >= HttpStatusCode.InternalServerError && httpEx.StatusCode <= HttpStatusCode.GatewayTimeout))
                 {
                     retryCount++;
                     form.ShowBaloonTipRetry();

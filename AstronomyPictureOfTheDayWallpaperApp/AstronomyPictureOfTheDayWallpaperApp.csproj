@@ -4,16 +4,24 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net6.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
-    <UseWindowsForms>true</UseWindowsForms>
+    <UseWindowsForms>True</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
     <ApplicationIcon>Icons\APODicon.ico</ApplicationIcon>
     <Copyright>FrosterDune</Copyright>
-	<Version>1.0.2</Version>
+	<Version>1.0.3</Version>
+	<AssemblyVersion>1.0.3</AssemblyVersion>
+	<FileVersion>1.0.3</FileVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <Optimize>False</Optimize>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="example\**" />
+    <EmbeddedResource Remove="example\**" />
+    <None Remove="example\**" />
+  </ItemGroup>
 
   <ItemGroup>
     <COMReference Include="IWshRuntimeLibrary">
@@ -43,7 +51,6 @@
 
   <ItemGroup>
     <Folder Include="Fonts\" />
-    <Folder Include="example\" />
   </ItemGroup>
 
 </Project>
