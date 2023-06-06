@@ -58,7 +58,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             {
                 try
                 {
-                    await wpAPODloader.LoadPicture().ConfigureAwait(false);
+                    await wpAPODloader.LoadPicture();
                     if (wpAPODloader.IsMediaTypeVideo())
                     {
                         _checkTimer.Stop(); // Stop the timer if the media type is video

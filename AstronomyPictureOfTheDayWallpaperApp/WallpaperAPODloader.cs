@@ -53,7 +53,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             string api = File.ReadAllText(apiPath);
             using (HttpClient client = new())
             {
-                json = await client.GetStringAsync(url + api).ConfigureAwait(false);
+                json = await client.GetStringAsync(url + api);
                 results = JsonConvert.DeserializeObject<ApodData>(json);
             }
             if (!File.Exists(configPath) && results?.media_type != "video" ||                                       // Check if config file doesnt exist
@@ -67,7 +67,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
                 wpAPODmanager.ShowBaloonTipVideo();
                 CreateOnStartupShortcut();
                 if (results is not null)
-                    await CreateConfig(results).ConfigureAwait(false);
+                    await CreateConfig(results);
             }
         }
         
@@ -85,13 +85,13 @@ namespace AstronomyPictureOfTheDayWallpaperApp
                     {
                         using (Stream streamToWriteTo = File.Open(picturePathDefault, FileMode.Create))
                         {
-                        await streamToReadFrom.CopyToAsync(streamToWriteTo, 48 * 1024).ConfigureAwait(false); // Maybe need modify buffer size later, now thisis ideal size of 48kb
+                        await streamToReadFrom.CopyToAsync(streamToWriteTo, 48 * 1024); // Maybe need modify buffer size later, now thisis ideal size of 48kb
                         }
                     }
                 }
             }
-            await CreateConfig(results).ConfigureAwait(false); // It create config txt file with of title name that was get from API for checking if the wallpaper is already downloaded                        
-            await SetWallpaper(results).ConfigureAwait(false);
+            await CreateConfig(results); // It create config txt file with of title name that was get from API for checking if the wallpaper is already downloaded                        
+            await SetWallpaper(results);
             CreateOnStartupShortcut();
         }
         
