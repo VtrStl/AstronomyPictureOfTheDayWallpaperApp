@@ -79,16 +79,10 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             if (!Directory.Exists(pictureFolder)) { Directory.CreateDirectory(pictureFolder); } // Check if the folder already exists, otherwise will create a folder in the user's Local                       
             using (HttpClient client = new())
             {
-                using (HttpResponseMessage response = await client.GetAsync(results.hdurl, HttpCompletionOption.ResponseHeadersRead))
-                {
-                    using (Stream streamToReadFrom = await response.Content.ReadAsStreamAsync())
-                    {
-                        using (Stream streamToWriteTo = File.Open(picturePathDefault, FileMode.Create))
-                        {
-                        await streamToReadFrom.CopyToAsync(streamToWriteTo, 48 * 1024); // Maybe need modify buffer size later, now thisis ideal size of 48kb
-                        }
-                    }
-                }
+                using HttpResponseMessage response = await client.GetAsync(results.hdurl, HttpCompletionOption.ResponseHeadersRead);
+                using Stream streamToReadFrom = await response.Content.ReadAsStreamAsync();
+                using Stream streamToWriteTo = File.Open(picturePathDefault, FileMode.Create);
+                await streamToReadFrom.CopyToAsync(streamToWriteTo, 48 * 1024); // Maybe need modify buffer size later, now this is ideal size of 48kb
             }
             await CreateConfig(results); // It create config txt file with of title name that was get from API for checking if the wallpaper is already downloaded                        
             await SetWallpaper(results);
@@ -98,10 +92,9 @@ namespace AstronomyPictureOfTheDayWallpaperApp
         // Download and set the current picture as wallpaper
         private async Task SetWallpaper(ApodData results)
         {
-            WallpaperAPODdraw wpAPODdraw = new();
             picturePathModified = Path.Combine(pictureFolder, "APODmodified.jpg");
-            pictureModified = Image.FromFile(picturePathDefault);
-            using (Graphics graphic = Graphics.FromImage(pictureModified))
+            WallpaperAPODdraw wpAPODdraw = new();
+            using (Graphics graphic = Graphics.FromImage(pictureModified = Image.FromFile(picturePathDefault)))
             {
                 string fontPath = Path.Combine(Application.StartupPath, "..", "..", "..", "Fonts"); // Need change path before release
                 PrivateFontCollection fontCollection = new();
@@ -132,7 +125,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             }
         }
         
-        // This method asynchronously creates a shortcut of the WallpaperAPOD application in the Windows Startup folder by invoking the CreateShortcut method of the WallpaperAPODshortcut class
+        // This method creates a shortcut of the WallpaperAPOD application in the Windows Startup folder by invoking the CreateShortcut method of the WallpaperAPODshortcut class
         private static void CreateOnStartupShortcut()
         {
             WallpaperAPODshortcut.CreateShortcut();

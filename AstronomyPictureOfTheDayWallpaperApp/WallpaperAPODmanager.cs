@@ -1,4 +1,6 @@
-﻿namespace AstronomyPictureOfTheDayWallpaperApp
+﻿using System.Net;
+
+namespace AstronomyPictureOfTheDayWallpaperApp
 {
     public class WallpaperAPODmanager : IDisposable
     {
@@ -9,6 +11,7 @@
         private NotifyIcon notificationIcon;
         private bool disposedValue;
 
+        // Constructor that creates most objects and here is where the app starts
         public WallpaperAPODmanager(NotifyIcon notificationIcon)
         {
             // Load all classes and items
@@ -20,7 +23,51 @@
             notificationIcon.MouseDoubleClick += NotificationIcon_MouseDoubleClick;
             UpdateTrayIcon(configExists);
         }
-        
+
+        public static bool ConfigExists()
+        {
+            return File.Exists(WallpaperAPODloader.configPath);
+        }
+
+        // Verifies if the API key is correct and lets the user know if the API key is valid
+        public async Task CheckAPIStatus(string apikey)
+        {
+            using (HttpClient client = new())
+            {
+                HttpResponseMessage response = await client.GetAsync("https://api.nasa.gov/planetary/apod?api_key=" + apikey);
+                HttpStatusCode statusCode = response.StatusCode;
+                switch (statusCode)
+                {
+                    case HttpStatusCode.OK:
+                        MessageBox.Show($"This API key is valid and server returns code: {statusCode}", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        break;
+
+                    case HttpStatusCode.Forbidden:
+                        MessageBox.Show($"This API key is not valid and server returns code: {statusCode}", "Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        break;
+
+                    case var code when (int)code >= 500 && (int)code <= 504:
+                        MessageBox.Show($"This API is maybe valid, but there is a problem on server side and server returns code: {statusCode}",
+                            "Failed", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        break;
+
+                    default:
+                        MessageBox.Show($"Unhandled status code: {statusCode}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        break;
+                }
+            }
+        }
+
+        // Writes the API key from the textbox from MainForm to apikey.txt
+        public void SetupAPIKey(string apikey)
+        {
+            string apikeypath = Path.Combine(Application.StartupPath, "..", "..", "..", "apikey.txt");
+            using (StreamWriter sw = new(apikeypath))
+            {
+                sw.WriteAsync(apikey);
+                sw.Flush();
+            }
+        }
         private void NotificationIcon_MouseDoubleClick(object? sender, MouseEventArgs e)
         {
             try
@@ -45,11 +92,7 @@
             }
         }
 
-        public static bool ConfigExists()
-        {
-            return File.Exists(WallpaperAPODloader.configPath);
-        }
-
+        // Starts the timers in WallpaperAPODruntime class
         public async Task Start()
         {            
             if (configExists)
