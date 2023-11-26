@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Sockets;
 
 namespace AstronomyPictureOfTheDayWallpaperApp
@@ -127,9 +128,11 @@ namespace AstronomyPictureOfTheDayWallpaperApp
                     MessageBox.Show("You must first enter you API key before the validation", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
-                await wpAPODmanager.CheckAPIStatus(EnterAPITxb.Text);
-                wpAPODmanager.SetupAPIKey(EnterAPITxb.Text);
-                MessageBox.Show("You API key has been saved, now you can Activate this program", "Success", MessageBoxButtons.OK, MessageBoxIcon.None);
+                if (await wpAPODmanager.CheckAPIStatus(EnterAPITxb.Text) == HttpStatusCode.OK)
+                {
+                    wpAPODmanager.SetupAPIKey(EnterAPITxb.Text);
+                    MessageBox.Show("You API key has been saved, now you can Activate this program", "Success", MessageBoxButtons.OK, MessageBoxIcon.None);
+                }
             }
             catch (Exception ex)
             {
