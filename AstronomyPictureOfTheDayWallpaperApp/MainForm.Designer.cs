@@ -182,7 +182,7 @@
             ValidAndSaveAPIBtn.Name = "ValidAndSaveAPIBtn";
             ValidAndSaveAPIBtn.Size = new Size(163, 23);
             ValidAndSaveAPIBtn.TabIndex = 3;
-            ValidAndSaveAPIBtn.Text = "Valid and setup new API key";
+            ValidAndSaveAPIBtn.Text = "Valid and set new API key";
             ValidAndSaveAPIBtn.UseVisualStyleBackColor = true;
             ValidAndSaveAPIBtn.Click += ValidAndSaveApiBtn_Click;
             // 

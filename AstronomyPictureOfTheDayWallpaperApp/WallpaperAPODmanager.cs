@@ -39,15 +39,15 @@ namespace AstronomyPictureOfTheDayWallpaperApp
                 switch (statusCode)
                 {
                     case HttpStatusCode.OK:
-                        MessageBox.Show($"This API key is valid and server returns code: {statusCode}", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        MessageBox.Show($"This API key is valid and server returns: {statusCode}", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
                         break;
 
                     case HttpStatusCode.Forbidden:
-                        MessageBox.Show($"This API key is not valid and server returns code: {statusCode}", "Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show($"This API key is not valid and server returns: {statusCode}", "Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         break;
 
                     case var code when (int)code >= 500 && (int)code <= 504:
-                        MessageBox.Show($"This API is maybe valid, but there is a problem on server side and server returns code: {statusCode}",
+                        MessageBox.Show($"This API is maybe valid, but there is a problem on the server side and server returns: {statusCode}",
                             "Failed", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                         break;
 
