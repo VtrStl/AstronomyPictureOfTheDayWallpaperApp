@@ -49,8 +49,9 @@ namespace AstronomyPictureOfTheDayWallpaperApp
         public async Task LoadPicture()
         {
             string url = "https://api.nasa.gov/planetary/apod?api_key=";
-            string apiPath = Path.Combine(Application.StartupPath, "..", "..", "..", "apikey.txt"); // Need change path before release
-            string api = File.ReadAllText(apiPath);
+            string apiPathDev = Path.Combine(Application.StartupPath, "..", "..", "..", "apikey.txt");
+            string apiPathSwitcher = File.Exists(apiPathDev) ? apiPathDev : Path.Combine(Application.StartupPath, "apikey.txt");
+            string api = File.ReadAllText(apiPathSwitcher);
             using (HttpClient client = new())
             {
                 json = await client.GetStringAsync(url + api);
@@ -96,9 +97,10 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             WallpaperAPODdraw wpAPODdraw = new();
             using (Graphics graphic = Graphics.FromImage(pictureModified = Image.FromFile(picturePathDefault)))
             {
-                string fontPath = Path.Combine(Application.StartupPath, "..", "..", "..", "Fonts"); // Need change path before release
+                string fontPathDev = Path.Combine(Application.StartupPath, "..", "..", "..", "Fonts");
+                string fontPathSwitcher = Directory.Exists(fontPathDev) ? fontPathDev : Path.Combine(Application.StartupPath, "Fonts");
                 PrivateFontCollection fontCollection = new();
-                DirectoryInfo fontsDir = new DirectoryInfo(fontPath);
+                DirectoryInfo fontsDir = new DirectoryInfo(fontPathSwitcher);
                 foreach (FileInfo fontFile in fontsDir.GetFiles("*.ttf"))
                 {
                     fontCollection.AddFontFile(fontFile.FullName);

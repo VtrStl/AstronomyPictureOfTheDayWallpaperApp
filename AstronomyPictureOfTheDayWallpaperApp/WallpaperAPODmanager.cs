@@ -24,6 +24,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             UpdateTrayIcon(configExists);
         }
 
+        // Checks if config file exists in AppLocal
         public static bool ConfigExists()
         {
             return File.Exists(WallpaperAPODloader.configPath);
@@ -59,16 +60,18 @@ namespace AstronomyPictureOfTheDayWallpaperApp
             }
         }
 
-        // Writes the API key from the textbox from MainForm to apikey.txt
+        // Writes the API key from the textbox from MainForm to apikey.txt or creates new textfile with an API key
         public void SetupAPIKey(string apikey)
         {
-            string apikeypath = Path.Combine(Application.StartupPath, "..", "..", "..", "apikey.txt");
+            string apikeypath = Path.Combine(Application.StartupPath, "..", "..", "..", "apikey.txt"); // Change path before release
             using (StreamWriter sw = new(apikeypath))
             {
                 sw.WriteAsync(apikey);
                 sw.Flush();
             }
         }
+
+        // This event reacts to double-clicking on the icon, and checking if the form is initialised or not, if not, it creates a new one.
         private void NotificationIcon_MouseDoubleClick(object? sender, MouseEventArgs e)
         {
             try
@@ -101,12 +104,14 @@ namespace AstronomyPictureOfTheDayWallpaperApp
                 await wallpaperAPODruntime.StartTimers();
             }
         }
+        
         // Updates the status label based on the isActive parameter
         public void UpdateTrayIcon(bool isActive)
         {
-            string iconFolder = Path.Combine(Application.StartupPath, "..", "..", "..", "Icons"); // Need change path before release
+            string iconPathDev = Path.Combine(Application.StartupPath, "..", "..", "..", "Icons");
+            string iconPathSwitcher = Directory.Exists(iconPathDev) ? iconPathDev : Path.Combine(Application.StartupPath, "Icons");
             string iconName = isActive ? "APODiconGreen.ico" : "APODicon.ico";
-            notificationIcon.Icon = new Icon(Path.Combine(iconFolder, iconName));
+            notificationIcon.Icon = new Icon(Path.Combine(iconPathSwitcher, iconName));
         }
 
         public void ShowBaloonTipWait()
