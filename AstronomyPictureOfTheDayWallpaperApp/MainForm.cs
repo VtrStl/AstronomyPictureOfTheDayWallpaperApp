@@ -101,7 +101,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
                 WallpaperAPODloader.ClearCache();
                 UpdateStatusLabel(false);
                 wpAPODmanager.UpdateTrayIcon(false);
-                wpAPODruntime = new(wpAPODloader, wpAPODmanager);
+                wpAPODruntime = new(wpAPODloader!, wpAPODmanager);
                 wpAPODruntime.StopTimers();
                 ActivateBT.Enabled = true;
             }

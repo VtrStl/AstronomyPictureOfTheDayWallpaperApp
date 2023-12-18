@@ -61,7 +61,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
                 (File.Exists(configPath) && File.ReadAllText(configPath) != results?.title && !IsMediaTypeVideo())) // OR it exists with different title AND if the mediatype is not "video"
             {
                 if (results is not null)
-                    await DownloadPicture(results); 
+                    await DownloadPicture(results);
             }
             if (IsMediaTypeVideo())
             {
@@ -77,11 +77,14 @@ namespace AstronomyPictureOfTheDayWallpaperApp
         {
             pictureFolder = Path.Combine(Application.LocalUserAppDataPath, "img");
             picturePathDefault = Path.Combine(pictureFolder, "APODclear.jpg");
-            if (!Directory.Exists(pictureFolder)) { Directory.CreateDirectory(pictureFolder); } // Check if the folder already exists, otherwise will create a folder in the user's Local                       
+            if (!Directory.Exists(pictureFolder)) { Directory.CreateDirectory(pictureFolder); } // Checks if the folder already exists, otherwise will create a folder in the user's Local                       
             using (HttpClient client = new())
             {
                 using HttpResponseMessage response = await client.GetAsync(results.hdurl, HttpCompletionOption.ResponseHeadersRead);
-                using Stream streamToReadFrom = await response.Content.ReadAsStreamAsync();
+                using HttpResponseMessage alternativeResponse = await client.GetAsync(results.url, HttpCompletionOption.ResponseHeadersRead);
+                bool isSuccessStatusCode = response.IsSuccessStatusCode;
+                using Stream streamToReadFrom = isSuccessStatusCode ?
+                    await response.Content.ReadAsStreamAsync() : await alternativeResponse.Content.ReadAsStreamAsync(); // Checks if the response is successful, otherwise will use alternative
                 using Stream streamToWriteTo = File.Open(picturePathDefault, FileMode.Create);
                 await streamToReadFrom.CopyToAsync(streamToWriteTo, 48 * 1024); // Maybe need modify buffer size later, now this is ideal size of 48kb
             }
@@ -186,6 +189,7 @@ namespace AstronomyPictureOfTheDayWallpaperApp
         public string title { get; set; } = "";
         public string explanation { get; set; } = "";
         public string hdurl { get; set; } = "";
+        public string url { get; set; } = "";
         public string media_type { get; set; } = "";        
     }
 }
